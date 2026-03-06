@@ -7,7 +7,7 @@ from ray.rllib.policy.policy import PolicySpec
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 
-output_dir = Path(__file__).parent / 'outputs' / 'ui_exports'
+output_dir = Path(__file__).parent / 'outputs_mappo' / 'ui_exports'
 output_dir.mkdir(parents=True, exist_ok=True)
 
 # ========================
@@ -18,7 +18,7 @@ env_config = {
         'schema': 'citylearn_challenge_2023_phase_2_local_evaluation',
         # Add optional rendering parameters for later evaluations
         'render_mode': 'none',  # default off for training
-        'render_directory': Path('outputs/ui_exports'),
+        'render_directory': output_dir,
     },
     'wrappers': [
         NormalizedObservationWrapper,
@@ -43,6 +43,7 @@ config = (
             "prioritized_replay_eps": 1e-6,
         }
     )
+    .resources(num_gpus=1) 
     .environment(RLlibMultiAgentEnv, env_config=env_config)
     .multi_agent(
         # Single shared policy for all agents
