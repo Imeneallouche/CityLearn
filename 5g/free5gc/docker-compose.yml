@@ -1,0 +1,571 @@
+# =============================================================================
+# free5GC Smart City 5G Infrastructure — Docker Compose
+# =============================================================================
+# ... (header unchanged) ...
+# =============================================================================
+
+name: free5gc-smart-city
+
+# ─── SHARED ENVIRONMENT ────────────────────────────────────────────────────────
+x-free5gc-env: &free5gc-env
+  GIN_MODE: release
+  GOTRACEBACK: crash
+
+# ─── NETWORKS (unchanged) ─────────────────────────────────────────────────────
+networks:
+  n2net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.200.200.0/24
+  n3net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.200.201.0/24
+  n4net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.200.202.0/24
+  n6net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.200.203.0/24
+  sba:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.200.100.0/24
+  mecnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.200.204.0/24
+
+# ─── VOLUMES (unchanged) ──────────────────────────────────────────────────────
+volumes:
+  mongodb_data:
+  free5gc_logs:
+
+# ==============================================================================
+# SERVICES
+# ==============================================================================
+services:
+
+  # ── MongoDB ────────────────────────────────────────────────────────────────
+  mongodb:
+    image: mongo:4.4
+    container_name: free5gc-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: free5gc
+    volumes:
+      - mongodb_data:/data/db
+      - ./config/mongo-init.js:/docker-entrypoint-initdb.d/init.js:ro
+    networks:
+      sba:
+        ipv4_address: 10.200.100.10
+        aliases:
+          - db
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── NRF ────────────────────────────────────────────────────────────────────
+  nrf:
+    image: free5gc/nrf:v3.4.1
+    container_name: free5gc-nrf
+    restart: unless-stopped
+    command: ./nrf -c ./config/nrf/nrfcfg.yaml
+    environment:
+      <<: *free5gc-env
+      DB_URI: mongodb://db:27017/free5gc
+    volumes:
+      - ./config/nrf:/free5gc/config/nrf:ro
+      - free5gc_logs:/free5gc/log
+    networks:
+      sba:
+        ipv4_address: 10.200.100.20
+        aliases:
+          - nrf.free5gc.org
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  # ── AUSF ────────────────────────────────────────────────────────────────────
+  ausf:
+    image: free5gc/ausf:v3.4.1
+    container_name: free5gc-ausf
+    restart: unless-stopped
+    command: ./ausf -c ./config/ausf/ausfcfg.yaml
+    environment:
+      <<: *free5gc-env
+      DB_URI: mongodb://db:27017/free5gc
+    volumes:
+      - ./config/ausf:/free5gc/config/ausf:ro
+      - free5gc_logs:/free5gc/log
+    networks:
+      sba:
+        ipv4_address: 10.200.100.21
+        aliases:
+          - ausf.free5gc.org
+    depends_on:
+      - nrf
+
+  # ── UDR ────────────────────────────────────────────────────────────────────
+  udr:
+    image: free5gc/udr:v3.4.1
+    container_name: free5gc-udr
+    restart: unless-stopped
+    command: ./udr -c ./config/udr/udrcfg.yaml
+    environment:
+      <<: *free5gc-env
+      DB_URI: mongodb://db:27017/free5gc
+    volumes:
+      - ./config/udr:/free5gc/config/udr:ro
+      - free5gc_logs:/free5gc/log
+    networks:
+      sba:
+        ipv4_address: 10.200.100.22
+        aliases:
+          - udr.free5gc.org
+    depends_on:
+      - nrf
+      - mongodb
+
+  # ── UDM ────────────────────────────────────────────────────────────────────
+  udm:
+    image: free5gc/udm:v3.4.1
+    container_name: free5gc-udm
+    restart: unless-stopped
+    command: ./udm -c ./config/udm/udmcfg.yaml
+    environment:
+      <<: *free5gc-env
+      DB_URI: mongodb://db:27017/free5gc
+    volumes:
+      - ./config/udm:/free5gc/config/udm:ro
+      - free5gc_logs:/free5gc/log
+    networks:
+      sba:
+        ipv4_address: 10.200.100.23
+        aliases:
+          - udm.free5gc.org
+    depends_on:
+      - nrf
+      - udr
+
+  # ── PCF ────────────────────────────────────────────────────────────────────
+  pcf:
+    image: free5gc/pcf:v3.4.1
+    container_name: free5gc-pcf
+    restart: unless-stopped
+    command: ./pcf -c ./config/pcf/pcfcfg.yaml
+    environment:
+      <<: *free5gc-env
+      DB_URI: mongodb://db:27017/free5gc
+    volumes:
+      - ./config/pcf:/free5gc/config/pcf:ro
+      - free5gc_logs:/free5gc/log
+    networks:
+      sba:
+        ipv4_address: 10.200.100.24
+        aliases:
+          - pcf.free5gc.org
+    depends_on:
+      - nrf
+      - mongodb
+
+  # ── NSSF ───────────────────────────────────────────────────────────────────
+  nssf:
+    image: free5gc/nssf:v3.4.1
+    container_name: free5gc-nssf
+    restart: unless-stopped
+    command: ./nssf -c ./config/nssf/nssfcfg.yaml
+    environment:
+      <<: *free5gc-env
+      DB_URI: mongodb://db:27017/free5gc
+    volumes:
+      - ./config/nssf:/free5gc/config/nssf:ro
+      - free5gc_logs:/free5gc/log
+    networks:
+      sba:
+        ipv4_address: 10.200.100.25
+        aliases:
+          - nssf.free5gc.org
+    depends_on:
+      - nrf
+
+  # ── AMF ────────────────────────────────────────────────────────────────────
+  amf:
+    image: free5gc/amf:v3.4.1
+    container_name: free5gc-amf
+    restart: unless-stopped
+    command: ./amf -c ./config/amf/amfcfg.yaml
+    environment:
+      <<: *free5gc-env
+      DB_URI: mongodb://db:27017/free5gc
+    volumes:
+      - ./config/amf:/free5gc/config/amf:ro
+      - free5gc_logs:/free5gc/log
+    networks:
+      sba:
+        ipv4_address: 10.200.100.30
+        aliases:
+          - amf.free5gc.org
+      n2net:
+        ipv4_address: 10.200.200.10
+        aliases:
+          - amf.free5gc.org
+    depends_on:
+      - nrf
+      - nssf
+      - ausf
+      - udm
+    ports:
+      - "38412:38412/sctp"
+
+  # ── SMF ────────────────────────────────────────────────────────────────────
+  smf:
+    image: free5gc/smf:v3.4.1
+    container_name: free5gc-smf
+    restart: unless-stopped
+    command: ./smf -c ./config/smf/smfcfg.yaml -u ./config/smf/uerouting.yaml
+    environment:
+      <<: *free5gc-env
+      DB_URI: mongodb://db:27017/free5gc
+    volumes:
+      - ./config/smf:/free5gc/config/smf:ro
+      - free5gc_logs:/free5gc/log
+    networks:
+      sba:
+        ipv4_address: 10.200.100.31
+        aliases:
+          - smf.free5gc.org
+      n4net:
+        ipv4_address: 10.200.202.10
+    depends_on:
+      - nrf
+      - amf
+
+  # ============================================================================
+  # UPF — User Plane Functions
+  # ============================================================================
+
+  upf-central:
+    image: free5gc/upf:v3.4.1
+    container_name: free5gc-upf-central
+    restart: unless-stopped
+    privileged: true
+    command: bash -c "./upf-iptables.sh && ./upf -c ./config/upf/central/upfcfg.yaml"
+    environment:
+      <<: *free5gc-env
+      UPF_ROLE: central
+    volumes:
+      - ./config/upf/central:/free5gc/config/upf/central:ro
+      - ./config/upf-iptables.sh:/free5gc/upf-iptables.sh:ro
+      - free5gc_logs:/free5gc/log
+    networks:
+      n3net:
+        ipv4_address: 10.200.201.10
+      n4net:
+        ipv4_address: 10.200.202.20
+      n6net:
+        ipv4_address: 10.200.203.10
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    depends_on:
+      - smf
+
+  upf-edge-1:
+    image: free5gc/upf:v3.4.1
+    container_name: free5gc-upf-edge-1
+    restart: unless-stopped
+    privileged: true
+    command: bash -c "./upf-iptables.sh && ./upf -c ./config/upf/edge-1/upfcfg.yaml"
+    environment:
+      <<: *free5gc-env
+      UPF_ROLE: edge
+      UPF_ID: "1"
+    volumes:
+      - ./config/upf/edge-1:/free5gc/config/upf/edge-1:ro
+      - ./config/upf-iptables.sh:/free5gc/upf-iptables.sh:ro
+      - free5gc_logs:/free5gc/log
+    networks:
+      n3net:
+        ipv4_address: 10.200.201.21
+      n4net:
+        ipv4_address: 10.200.202.21
+      n6net:
+        ipv4_address: 10.200.203.21
+      mecnet:
+        ipv4_address: 10.200.204.21
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    depends_on:
+      - smf
+      - upf-central
+
+  upf-edge-2:
+    image: free5gc/upf:v3.4.1
+    container_name: free5gc-upf-edge-2
+    restart: unless-stopped
+    privileged: true
+    command: bash -c "./upf-iptables.sh && ./upf -c ./config/upf/edge-2/upfcfg.yaml"
+    environment:
+      <<: *free5gc-env
+      UPF_ROLE: edge
+      UPF_ID: "2"
+    volumes:
+      - ./config/upf/edge-2:/free5gc/config/upf/edge-2:ro
+      - ./config/upf-iptables.sh:/free5gc/upf-iptables.sh:ro
+      - free5gc_logs:/free5gc/log
+    networks:
+      n3net:
+        ipv4_address: 10.200.201.22
+      n4net:
+        ipv4_address: 10.200.202.22
+      n6net:
+        ipv4_address: 10.200.203.22
+      mecnet:
+        ipv4_address: 10.200.204.22
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    depends_on:
+      - smf
+      - upf-central
+
+  upf-edge-3:
+    image: free5gc/upf:v3.4.1
+    container_name: free5gc-upf-edge-3
+    restart: unless-stopped
+    privileged: true
+    command: bash -c "./upf-iptables.sh && ./upf -c ./config/upf/edge-3/upfcfg.yaml"
+    environment:
+      <<: *free5gc-env
+      UPF_ROLE: edge
+      UPF_ID: "3"
+    volumes:
+      - ./config/upf/edge-3:/free5gc/config/upf/edge-3:ro
+      - ./config/upf-iptables.sh:/free5gc/upf-iptables.sh:ro
+      - free5gc_logs:/free5gc/log
+    networks:
+      n3net:
+        ipv4_address: 10.200.201.23
+      n4net:
+        ipv4_address: 10.200.202.23
+      n6net:
+        ipv4_address: 10.200.203.23
+      mecnet:
+        ipv4_address: 10.200.204.23
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    depends_on:
+      - smf
+      - upf-central
+
+  # ============================================================================
+  # gNBs (unchanged)
+  # ============================================================================
+
+  ueransim-gnb-1:
+    image: free5gc/ueransim:v3.4.1
+    container_name: ueransim-gnb-1
+    restart: unless-stopped
+    command: ./nr-gnb -c config/gnb1.yaml
+    volumes:
+      - ./config/ueransim/gnb1.yaml:/ueransim/config/gnb1.yaml:ro
+    networks:
+      n2net:
+        ipv4_address: 10.200.200.21
+      n3net:
+        ipv4_address: 10.200.201.31
+    depends_on:
+      - amf
+      - upf-edge-1
+    labels:
+      citylearn.role: gnb
+      citylearn.gnb_id: "1"
+      citylearn.min_buildings: "1"
+      citylearn.max_buildings: "8"
+      citylearn.slice: eMBB
+
+  ueransim-gnb-2:
+    image: free5gc/ueransim:v3.4.1
+    container_name: ueransim-gnb-2
+    restart: unless-stopped
+    command: ./nr-gnb -c config/gnb2.yaml
+    volumes:
+      - ./config/ueransim/gnb2.yaml:/ueransim/config/gnb2.yaml:ro
+    networks:
+      n2net:
+        ipv4_address: 10.200.200.22
+      n3net:
+        ipv4_address: 10.200.201.32
+    depends_on:
+      - amf
+      - upf-edge-2
+    labels:
+      citylearn.role: gnb
+      citylearn.gnb_id: "2"
+      citylearn.min_buildings: "9"
+      citylearn.max_buildings: "16"
+      citylearn.slice: URLLC
+
+  ueransim-gnb-3:
+    image: free5gc/ueransim:v3.4.1
+    container_name: ueransim-gnb-3
+    restart: unless-stopped
+    command: ./nr-gnb -c config/gnb3.yaml
+    volumes:
+      - ./config/ueransim/gnb3.yaml:/ueransim/config/gnb3.yaml:ro
+    networks:
+      n2net:
+        ipv4_address: 10.200.200.23
+      n3net:
+        ipv4_address: 10.200.201.33
+    depends_on:
+      - amf
+      - upf-edge-3
+    labels:
+      citylearn.role: gnb
+      citylearn.gnb_id: "3"
+      citylearn.min_buildings: "17"
+      citylearn.max_buildings: "20"
+      citylearn.slice: mMTC
+
+  # ============================================================================
+  # MEC Nodes (unchanged)
+  # ============================================================================
+
+  mec-node-1:
+    image: nginx:1.25-alpine
+    container_name: mec-node-1
+    restart: unless-stopped
+    environment:
+      MEC_ID: "1"
+      GNB_ID: "1"
+      UPSTREAM_UPF: "10.200.204.21"
+      MEC_SERVICES: "energy-analytics,video-edge,urllc-proxy"
+    volumes:
+      - ./config/mec/mec1.conf:/etc/nginx/nginx.conf:ro
+      - ./mec-apps/node-1:/var/www/mec:ro
+    networks:
+      mecnet:
+        ipv4_address: 10.200.204.11
+      n6net:
+        ipv4_address: 10.200.203.31
+    ports:
+      - "8081:80"
+    depends_on:
+      - upf-edge-1
+    labels:
+      citylearn.role: mec
+      citylearn.mec_id: "1"
+      citylearn.min_buildings: "1"
+
+  mec-node-2:
+    image: nginx:1.25-alpine
+    container_name: mec-node-2
+    restart: unless-stopped
+    environment:
+      MEC_ID: "2"
+      GNB_ID: "2"
+      UPSTREAM_UPF: "10.200.204.22"
+      MEC_SERVICES: "energy-analytics,demand-response,iot-gateway"
+    volumes:
+      - ./config/mec/mec2.conf:/etc/nginx/nginx.conf:ro
+      - ./mec-apps/node-2:/var/www/mec:ro
+    networks:
+      mecnet:
+        ipv4_address: 10.200.204.12
+      n6net:
+        ipv4_address: 10.200.203.32
+    ports:
+      - "8082:80"
+    depends_on:
+      - upf-edge-2
+    labels:
+      citylearn.role: mec
+      citylearn.mec_id: "2"
+      citylearn.min_buildings: "9"
+
+  mec-node-3:
+    image: nginx:1.25-alpine
+    container_name: mec-node-3
+    restart: unless-stopped
+    environment:
+      MEC_ID: "3"
+      GNB_ID: "3"
+      UPSTREAM_UPF: "10.200.204.23"
+      MEC_SERVICES: "energy-analytics,smart-meter-aggregator,iot-gateway"
+    volumes:
+      - ./config/mec/mec3.conf:/etc/nginx/nginx.conf:ro
+      - ./mec-apps/node-3:/var/www/mec:ro
+    networks:
+      mecnet:
+        ipv4_address: 10.200.204.13
+      n6net:
+        ipv4_address: 10.200.203.33
+    ports:
+      - "8083:80"
+    depends_on:
+      - upf-edge-3
+    labels:
+      citylearn.role: mec
+      citylearn.mec_id: "3"
+      citylearn.min_buildings: "17"
+
+  # ── free5GC WebUI ──────────────────────────────────────────────────────────
+  webui:
+    image: free5gc/webui:v3.4.1
+    container_name: free5gc-webui
+    restart: unless-stopped
+    command: ./webui -c ./config/webui/webuicfg.yaml
+    environment:
+      GIN_MODE: release
+      WEBUI_URL: "0.0.0.0:5000"
+      DB_URI: mongodb://db:27017/free5gc
+    volumes:
+      - ./config/webui:/free5gc/config/webui:ro
+    networks:
+      sba:
+        ipv4_address: 10.200.100.50
+        aliases:
+          - webui.free5gc.org
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+      - nrf
+
+  # ── Prometheus (unchanged) ─────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: free5gc-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      sba:
+        ipv4_address: 10.200.100.60
+      mecnet:
+        ipv4_address: 10.200.204.60
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=7d'
+    depends_on:
+      - nrf
