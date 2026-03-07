@@ -1,0 +1,30 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# System deps for citylearn (needs gcc for some native extensions)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc g++ && \
+    rm -rf /var/lib/apt/lists/*
+
+# All deps in one pass — use CPU-only torch index so nothing pulls CUDA
+RUN pip install --no-cache-dir \
+    --extra-index-url https://download.pytorch.org/whl/cpu \
+    "torch==2.5.1+cpu" \
+    "ray[default]==2.38.0" \
+    "citylearn==2.5.0" \
+    "gymnasium==0.28.1" \
+    "numpy==1.26.4" \
+    "scikit-learn==1.2.2" \
+    pandas \
+    cloudpickle \
+    fastapi \
+    "uvicorn[standard]"
+
+# Copy application code
+COPY api/ /app/api/
+COPY sim/ /app/sim/
+
+EXPOSE 8000
+
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
