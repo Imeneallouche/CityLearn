@@ -73,7 +73,7 @@ export default function AgentPanel() {
   const { buildings, buildings_data, algorithm } = episode;
 
   return (
-    <div className="card flex-1 flex flex-col min-h-0">
+    <div className="card flex flex-col">
       <div className="card-header">
         <span>🤖</span>
         <h3 className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Agent Decisions</h3>

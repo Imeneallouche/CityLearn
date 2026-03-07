@@ -42,7 +42,7 @@ export default function Layout() {
                 <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
               </svg>
             </div>
-            <h2 className="text-xl font-semibold text-slate-800">CityLearn Simulation Viewer</h2>
+            <h2 className="text-xl font-semibold text-slate-800">CityLearn RL Inference and Simulation Engine</h2>
             <p className="text-slate-500 text-sm leading-relaxed">
               Select a trained model and episode above, then click <strong>Load</strong> to visualize the RL agent's energy management decisions across a multi-building district.
             </p>
