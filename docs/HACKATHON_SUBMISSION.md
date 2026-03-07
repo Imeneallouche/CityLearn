@@ -4,14 +4,18 @@
 
 ## Shared Context
 
-This document merges our two technical workstreams exactly as documented: RL and 5G.
-The objective is a single smart-city vision where AI energy optimization operates with a scalable digital-power and connectivity backbone.
+Our solution focuses on implementing reinforcement learning (RL) for district energy optimization over a scalable 5G network backbone.
 
-The structure is intentionally simple:
+Our main contribution is the integration of two technical streams into one smart-city system:
 
-1. Part I: RL documentation (verbatim)
-2. Part II: 5G documentation (verbatim)
-3. Final smooth conclusion
+- an AI control stream (RL) that optimizes renewable energy usage, cost, carbon, and peak demand,
+- a 5G digital-power stream that provides reliable, low-latency, and scalable urban connectivity.
+
+In this document, we present both streams separately and then connect them as one unified architecture:
+
+1. Part I: RL technical stream
+2. Part II: 5G technical stream
+3. Final conclusion on how both streams operate together
 ---
 
 ## Part I - RL 
