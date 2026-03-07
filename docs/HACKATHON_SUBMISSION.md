@@ -2,7 +2,7 @@
 
 ## Smart Cities & Renewable Energy - AI, 5G & Digital Power
 
-## Shared Context
+## Introduction
 
 Our solution focuses on implementing reinforcement learning (RL) for district energy optimization over a scalable 5G network backbone.
 
@@ -16,6 +16,46 @@ In this document, we present both streams separately and then connect them as on
 1. Part I: RL technical stream
 2. Part II: 5G technical stream
 3. Final conclusion on how both streams operate together
+
+## System Architecture
+
+```mermaid
+flowchart LR
+    subgraph City["Smart City Scenario"]
+        BLD["Buildings + PV + Storage + Loads"]
+    end
+
+    subgraph RL["Part I - RL Energy Optimization"]
+        ENV["CityLearn Environment"]
+        AG["Multi-Agent RL<br/>(Independent SAC / Shared SAC / MARLISA)"]
+        KPI_RL["Energy KPIs<br/>(cost, carbon, peak, renewable usage)"]
+    end
+
+    subgraph NET["Part II - 5G Digital Power"]
+        UI["City Control UI"]
+        BR["State Bridge<br/>/api/buildings -> buildings.txt"]
+        SC["Auto-Scaler"]
+        CORE["free5GC + UERANSIM + MEC"]
+        KPI_5G["5G KPIs<br/>(capacity, throughput, latency, loss, density)"]
+    end
+
+    subgraph OPS["Operations Layer"]
+        DASH["Unified Dashboard"]
+        AST["Virtual Assistant"]
+    end
+
+    BLD --> ENV
+    ENV --> AG
+    AG --> ENV
+    AG --> KPI_RL
+
+    BLD --> UI
+    UI --> BR --> SC --> CORE --> KPI_5G
+
+    KPI_RL --> DASH
+    KPI_5G --> DASH
+    DASH --> AST
+```
 ---
 
 ## Part I - RL 
