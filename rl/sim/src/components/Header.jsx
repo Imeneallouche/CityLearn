@@ -1,7 +1,8 @@
+import { Sparkles } from 'lucide-react';
 import { useSimulation } from '../context/SimulationContext';
 
 
-export default function Header() {
+export default function Header({ chatMode, onOpenChat }) {
   const { state, dispatch, loadEpisode } = useSimulation();
   const { catalog, selectedModelId, selectedEpisode, loading, compareMode, episode } = state;
 
@@ -80,9 +81,23 @@ export default function Header() {
         )}
       </button>
 
-      {/* Model info badge */}
+      {/* Right section */}
+      <div className="ml-auto flex items-center gap-2">
+        {/* AI Assistant button */}
+        <button
+          onClick={() => onOpenChat(chatMode ? null : 'fullscreen')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-all duration-200 ${
+            chatMode === 'fullscreen'
+              ? 'bg-gradient-to-r from-indigo-600 to-purple-600 border-indigo-600 text-white shadow-sm'
+              : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700'
+          }`}
+        >
+          <Sparkles size={13} />
+          AI Assistant
+        </button>
+
       {selectedModel && (
-        <div className="ml-auto flex items-center gap-2">
+        <>
           {episode && (
             <button
               onClick={() => dispatch({ type: 'TOGGLE_COMPARE' })}
@@ -106,8 +121,9 @@ export default function Header() {
               {selectedModel.checkpoint.split('/').pop()}
             </span>
           )}
-        </div>
+        </>
       )}
+      </div>
     </header>
   );
 }

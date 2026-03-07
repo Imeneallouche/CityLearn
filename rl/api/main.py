@@ -7,6 +7,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 from .config import discover_models, get_dataset_schema, get_building_names, get_static_dir, DATASET_MAP
 from .data import load_episode_data, load_carbon_intensity
@@ -161,6 +162,31 @@ def compare_models(dataset_size: str):
                 "kpis": ep_data["kpis"],
             })
     return {"dataset_size": dataset_size, "models": results}
+
+
+# ──────────────────────────────────────────────
+#  Chat / Digital Assistant
+# ──────────────────────────────────────────────
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+class ChatRequest(BaseModel):
+    messages: list[ChatMessage]
+    session_id: str | None = None
+
+@app.post("/api/chat")
+def chat_endpoint(req: ChatRequest):
+    """Send a message to the digital assistant and get a response with tool calls."""
+    try:
+        from .agent import chat
+        messages = [{"role": m.role, "content": m.content} for m in req.messages]
+        result = chat(messages, session_id=req.session_id)
+        return result
+    except Exception as e:
+        logger.exception("Chat failed")
+        raise HTTPException(500, f"Chat error: {e}")
 
 
 # ──────────────────────────────────────────────
