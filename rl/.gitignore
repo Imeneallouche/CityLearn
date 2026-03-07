@@ -1,0 +1,8 @@
+.rl-citylearn/
+.venv/
+__pycache__/
+
+datasets/
+# outputs/
+
+training2.ipynb
