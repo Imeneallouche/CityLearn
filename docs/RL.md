@@ -348,52 +348,42 @@ Interpretation:
 3. Lightweight coordination signals can provide meaningful gains without full centralization.
 4. The MARLISA + MARL reward setting is the strongest candidate for larger districts.
 
----
-
-## 9. Next Steps
-
-Recommended next steps:
-
-1. Extend testing to larger districts and more climate zones.
-2. Add forecast-informed control features (solar and demand uncertainty).
-3. Evaluate robustness under changing tariff and occupancy patterns.
-4. Integrate human-in-the-loop controls for operator trust and safety.
 
 ---
 
-## 10. Placeholder: Virtual Agent Assistant (To Be Filled)
+## 9. Placeholder: Virtual Agent Assistant (To Be Filled)
 
-### 10.1 Role and Objectives
-
-_To be completed by teammate_
-
-### 10.2 Architecture and Interaction Flow
+### 9.1 Role and Objectives
 
 _To be completed by teammate_
 
-### 10.3 Safety, Guardrails, and User Experience
+### 9.2 Architecture and Interaction Flow
+
+_To be completed by teammate_
+
+### 9.3 Safety, Guardrails, and User Experience
 
 _To be completed by teammate_
 
 ---
 
-## 11. Placeholder: UI Screenshots and User Journey (To Be Filled)
+## 10. Placeholder: UI Screenshots and User Journey (To Be Filled)
 
-### 11.1 Main Screenshots
-
-_To be completed by teammate_
-
-### 11.2 User Flow Annotations
+### 10.1 Main Screenshots
 
 _To be completed by teammate_
 
-### 11.3 Demo Script Notes
+### 10.2 User Flow Annotations
+
+_To be completed by teammate_
+
+### 10.3 Demo Script Notes
 
 _To be completed by teammate_
 
 ---
 
-## 12. References
+## 11. References
 
 1. Vazquez-Canteli et al. MARLISA: Multi-Agent RL with Iterative Sequential Action Selection. BuildSys, 2021.  
 2. Vazquez-Canteli and Nagy. CityLearn v1.0: An OpenAI Gym Environment for Demand Response. BuildSys, 2019.  
