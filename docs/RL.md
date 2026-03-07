@@ -42,7 +42,7 @@ At every simulation step:
 4. A reward is returned.
 5. The agent updates its policy to maximize long-term cumulative reward.
 
-![Agent-Environment RL Loop](../assets/agent_env_loop.png)
+![Agent-Environment RL Loop](./assets/agent_env_loop.png)
 
 In compact form, RL solves:
 
@@ -70,9 +70,9 @@ Each building has:
 - DHW storage,
 - electrical battery storage.
 
-![CityLearn Environment View](../assets/citylearn-env.jpg)
+![CityLearn Environment View](./assets/citylearn-env.jpg)
 
-![CityLearn District Illustration](../assets/citylearn.png)
+![CityLearn District Illustration](./assets/citylearn.png)
 
 ### Observation
 
@@ -299,9 +299,9 @@ Artifacts used:
 
 ## 7.1 Section 1: Independent Reward
 
-![Learning Curves - Independent Reward](../poster_plots/plot_1a_learning_indep.png)
+![Learning Curves - Independent Reward](./poster_plots/plot_1a_learning_indep.png)
 
-![KPI Comparison - Independent Reward](../poster_plots/plot_1b_kpi_indep.png)
+![KPI Comparison - Independent Reward](./poster_plots/plot_1b_kpi_indep.png)
 
 Interpretation:
 
@@ -310,9 +310,9 @@ Interpretation:
 
 ## 7.2 Section 2: Solar Penalty Reward
 
-![Learning Curves - Solar Reward](../poster_plots/plot_2a_learning_solar.png)
+![Learning Curves - Solar Reward](./poster_plots/plot_2a_learning_solar.png)
 
-![KPI Comparison - Solar Reward](../poster_plots/plot_2b_kpi_solar.png)
+![KPI Comparison - Solar Reward](./poster_plots/plot_2b_kpi_solar.png)
 
 Interpretation:
 
@@ -321,9 +321,9 @@ Interpretation:
 
 ## 7.3 Section 3: MARL Reward
 
-![Learning Curves - MARL Reward](../poster_plots/plot_3a_learning_marl.png)
+![Learning Curves - MARL Reward](./poster_plots/plot_3a_learning_marl.png)
 
-![KPI Comparison - MARL Reward](../poster_plots/plot_3b_kpi_marl.png)
+![KPI Comparison - MARL Reward](./poster_plots/plot_3b_kpi_marl.png)
 
 Interpretation:
 
@@ -332,7 +332,7 @@ Interpretation:
 
 ## 7.4 Section 4: Scalability (MARLISA, MARL Reward)
 
-![Scalability - MARLISA 3 vs 6](../poster_plots/plot_4_scalability.png)
+![Scalability - MARLISA 3 vs 6](./poster_plots/plot_4_scalability.png)
 
 Interpretation:
 
@@ -348,43 +348,52 @@ Interpretation:
 3. Lightweight coordination signals can provide meaningful gains without full centralization.
 4. The MARLISA + MARL reward setting is the strongest candidate for larger districts.
 
+---
 
+## 9. Next Steps
+
+Recommended next steps:
+
+1. Extend testing to larger districts and more climate zones.
+2. Add forecast-informed control features (solar and demand uncertainty).
+3. Evaluate robustness under changing tariff and occupancy patterns.
+4. Integrate human-in-the-loop controls for operator trust and safety.
 
 ---
 
-## 9. Placeholder: Virtual Agent Assistant (To Be Filled)
+## 10. Placeholder: Virtual Agent Assistant (To Be Filled)
 
-### 9.1 Role and Objectives
-
-_To be completed by teammate_
-
-### 9.2 Architecture and Interaction Flow
+### 10.1 Role and Objectives
 
 _To be completed by teammate_
 
-### 9.3 Safety, Guardrails, and User Experience
+### 10.2 Architecture and Interaction Flow
 
 _To be completed by teammate_
 
----
-
-## 10. Placeholder: UI Screenshots and User Journey (To Be Filled)
-
-### 10.1 Main Screenshots
-
-_To be completed by teammate_
-
-### 10.2 User Flow Annotations
-
-_To be completed by teammate_
-
-### 10.3 Demo Script Notes
+### 10.3 Safety, Guardrails, and User Experience
 
 _To be completed by teammate_
 
 ---
 
-## 11. References
+## 11. Placeholder: UI Screenshots and User Journey (To Be Filled)
+
+### 11.1 Main Screenshots
+
+_To be completed by teammate_
+
+### 11.2 User Flow Annotations
+
+_To be completed by teammate_
+
+### 11.3 Demo Script Notes
+
+_To be completed by teammate_
+
+---
+
+## 12. References
 
 1. Vazquez-Canteli et al. MARLISA: Multi-Agent RL with Iterative Sequential Action Selection. BuildSys, 2021.  
 2. Vazquez-Canteli and Nagy. CityLearn v1.0: An OpenAI Gym Environment for Demand Response. BuildSys, 2019.  
