@@ -106,11 +106,7 @@ Both streams are fully **dockerized**. Every component — from RL training to t
 
 RL training was performed **locally on an NVIDIA RTX 4070** because the PyTorch version available on Huawei ModelArts at the time of development was outdated and incompatible with the required dependencies (Ray/RLlib 2.38, PyTorch 2.10, CUDA 12.8).
 
-To enable deployment on ModelArts, we provide **`rl/Dockerfile.huawei`** — a Docker image that bundles all up-to-date dependencies (PyTorch 2.10.0, CUDA 12.8, Ray, CityLearn 2.5, etc.) in a single container. This image can be:
-
-1. Built locally: `docker build -f Dockerfile.huawei -t degourdi-train .`
-2. Pushed to Huawei SWR (Software Repository for Container): `docker tag degourdi-train swr.<region>.myhuaweicloud.com/<org>/degourdi-train:latest && docker push ...`
-3. Used as a custom image in a ModelArts training job, bypassing the platform's default (outdated) PyTorch environment entirely.
+To enable deployment on ModelArts, we provide **`rl/Dockerfile.huawei`** — a Docker image that bundles all up-to-date dependencies (PyTorch 2.10.0, CUDA 12.8, Ray, CityLearn 2.5, etc.) in a single container. This image can be built and pushed to Huawei SWR, then used as a custom image in a ModelArts training job, bypassing the platform's default (outdated) PyTorch environment entirely.
 
 ### Gemini API Key (Required for Virtual Assistant)
 
@@ -287,31 +283,31 @@ Comparing different algorithms under different rewards is not a fair test. This 
 
 ### 6.1 Independent Reward
 
-<img src="./poster_plots/plot_1a_learning_indep.png" alt="Learning Curves - Independent Reward" width="600"/>
+<img src="./poster_plots/plot_1a_learning_indep.png" alt="Learning Curves - Independent Reward" width="340"/>
 
-<img src="./poster_plots/plot_1b_kpi_indep.png" alt="KPI Comparison - Independent Reward" width="600"/>
+<img src="./poster_plots/plot_1b_kpi_indep.png" alt="KPI Comparison - Independent Reward" width="340"/>
 
 This section tests whether policy sharing alone helps when incentives remain selfish. Similar trends indicate that reward structure, not only parameter sharing, drives district behavior.
 
 ### 6.2 Solar Penalty Reward
 
-<img src="./poster_plots/plot_2a_learning_solar.png" alt="Learning Curves - Solar Reward" width="600"/>
+<img src="./poster_plots/plot_2a_learning_solar.png" alt="Learning Curves - Solar Reward" width="340"/>
 
-<img src="./poster_plots/plot_2b_kpi_solar.png" alt="KPI Comparison - Solar Reward" width="600"/>
+<img src="./poster_plots/plot_2b_kpi_solar.png" alt="KPI Comparison - Solar Reward" width="340"/>
 
 Under a solar-focused incentive, MARLISA-style coordination improves quality of control decisions. Gains appear in evaluation KPIs even when learning curves are close.
 
 ### 6.3 MARL Reward
 
-<img src="./poster_plots/plot_3a_learning_marl.png" alt="Learning Curves - MARL Reward" width="600"/>
+<img src="./poster_plots/plot_3a_learning_marl.png" alt="Learning Curves - MARL Reward" width="340"/>
 
-<img src="./poster_plots/plot_3b_kpi_marl.png" alt="KPI Comparison - MARL Reward" width="600"/>
+<img src="./poster_plots/plot_3b_kpi_marl.png" alt="KPI Comparison - MARL Reward" width="340"/>
 
 Coordination-focused reward plus coordination-aware policy structure is the strongest combination in this study.
 
 ### 6.4 Scalability (MARLISA, MARL Reward)
 
-<img src="./poster_plots/plot_4_scalability.png" alt="Scalability - MARLISA 3 vs 6" width="600"/>
+<img src="./poster_plots/plot_4_scalability.png" alt="Scalability - MARLISA 3 vs 6" width="340"/>
 
 The best configuration is transferred from 3 to 6 buildings. Results suggest the approach scales without requiring a new control architecture.
 
@@ -375,7 +371,7 @@ The platform includes a conversational assistant that serves as an expert analys
 
 **Landing State: Model and Episode Selection**
 
-<img src="./assets/ui_landing.png" alt="Landing State" width="800"/>
+<img src="./assets/ui_landing.png" alt="Landing State"/>
 
 The header bar shows a model selector dropdown (listing all discovered models in `ALGORITHM / reward_variant / N buildings` format), an episode selector, and a Load button.
 
@@ -383,7 +379,7 @@ The header bar shows a model selector dropdown (listing all discovered models in
 
 **Main Dashboard: Three-Panel Layout**
 
-<img src="./assets/ui_dashboard.png" alt="Main Dashboard" width="800"/>
+<img src="./assets/ui_dashboard.png" alt="Main Dashboard"/>
 
 Three-column layout: left sidebar (environment controls, building selection, dataset info, available baselines); center panel (energy flow Sankey diagram, building grid with per-building state cards, community-level consumption/solar timeseries charts); right panel (KPI panel with six normalized metric cards and a bar chart, agent information panel).
 
@@ -391,7 +387,7 @@ Three-column layout: left sidebar (environment controls, building selection, dat
 
 **Building Grid: Per-Building State Cards**
 
-<img src="./assets/ui_building_grid.png" alt="Building Grid" width="800"/>
+<img src="./assets/ui_building_grid.png" alt="Building Grid" width="140"/>
 
 Each card shows building name, real-time battery SOC, net consumption, and indoor temperature. Color-coded based on metric values.
 
@@ -399,7 +395,7 @@ Each card shows building name, real-time battery SOC, net consumption, and indoo
 
 **Energy Flow: Sankey Diagram**
 
-<img src="./assets/ui_energy_flow.png" alt="Energy Flow" width="800"/>
+<img src="./assets/ui_energy_flow.png" alt="Energy Flow" width="140"/>
 
 Shows how energy moves through the district at each timestep — from solar generation through battery storage to grid import/export.
 
@@ -407,7 +403,7 @@ Shows how energy moves through the district at each timestep — from solar gene
 
 **Community Charts: District-Level Timeseries**
 
-<img src="./assets/ui_community_charts.png" alt="Community Charts" width="800"/>
+<img src="./assets/ui_community_charts.png" alt="Community Charts" width="200"/>
 
 Net consumption over time, solar generation overlay, and peak demand indicators across the full episode.
 
@@ -415,7 +411,7 @@ Net consumption over time, solar generation overlay, and peak demand indicators 
 
 **KPI Panel: Performance Metrics**
 
-<img src="./assets/ui_kpi_panel.png" alt="KPI Panel" width="800"/>
+<img src="./assets/ui_kpi_panel.png" alt="KPI Panel" width="200"/>
 
 Six normalized performance metrics: cost, carbon emissions, electricity consumption, peak demand, daily peak, load factor, and ramping. Each card is color-coded (green when < 1.0, indicating the RL agent outperforms the no-op baseline).
 
@@ -423,7 +419,7 @@ Six normalized performance metrics: cost, carbon emissions, electricity consumpt
 
 **Playback Bar: Timeline Scrubber**
 
-<img src="./assets/ui_playback.png" alt="Playback Bar" width="800"/>
+<img src="./assets/ui_playback.png" alt="Playback Bar" width="140"/>
 
 Bottom-docked playback controls: play/pause, speed adjustment, timeline scrubber, timestamp display. Enables animated replay of the full episode.
 
@@ -431,7 +427,7 @@ Bottom-docked playback controls: play/pause, speed adjustment, timeline scrubber
 
 **Comparison Mode: Model vs. Baseline**
 
-<img src="./assets/ui_comparison.png" alt="Comparison Mode" width="800"/>
+<img src="./assets/ui_comparison.png" alt="Comparison Mode"/>
 
 Side-by-side KPI tables comparing the loaded RL model against a baseline agent (no-op or RBC). Delta calculations highlight improvements or regressions.
 
@@ -439,7 +435,7 @@ Side-by-side KPI tables comparing the loaded RL model against a baseline agent (
 
 **Chat Panel (Popup Mode)**
 
-<img src="./assets/ui_chat_popup.png" alt="Chat Popup" width="800"/>
+<img src="./assets/ui_chat_popup.png" alt="Chat Popup" width="140"/>
 
 Floating chat panel with user/assistant message bubbles, Markdown-rendered responses, and tool call badges.
 
@@ -447,7 +443,7 @@ Floating chat panel with user/assistant message bubbles, Markdown-rendered respo
 
 **Chat Panel (Fullscreen Mode)**
 
-<img src="./assets/ui_chat_fullscreen.png" alt="Chat Fullscreen" width="800"/>
+<img src="./assets/ui_chat_fullscreen.png" alt="Chat Fullscreen"/>
 
 Fullscreen chat mode replacing the main dashboard content for extended analytical conversations.
 
@@ -472,7 +468,7 @@ cp .env.example .env
 # Edit .env and add your Gemini API key from https://aistudio.google.com/apikey
 
 # Build and start the dashboard
-docker compose up --build dashboard
+docker compose up -d --build
 ```
 
 The dashboard is accessible at **http://localhost:8000**.
@@ -482,9 +478,9 @@ This single container serves:
 - The FastAPI REST API (`/api/*` endpoints)
 - The virtual assistant (`POST /api/chat`)
 
-### 10.2 Running RL Training Locally
+### 10.2 Running RL Training
 
-Training was performed locally on an NVIDIA RTX 4070. To reproduce:
+Training was performed locally on an NVIDIA RTX 4070. Training is done through the Jupyter notebooks provided in `rl/notebooks/`. To set up the environment:
 
 ```bash
 cd rl/
@@ -496,39 +492,16 @@ conda activate degourdi
 # Install dependencies
 pip install -r requirements.txt
 pip install torch --index-url https://download.pytorch.org/whl/cu124
-
-# Run SAC training
-python scripts/train_sac.py
 ```
+
+Then open and run the training notebooks in `rl/notebooks/`.
 
 Training artifacts are saved to `rl/outputs/<algorithm>/<reward>/<dataset_size>/`:
 - `checkpoints/` — RLlib saved checkpoints
 - `schemas/` — CityLearn schema overrides for evaluation
 - `ui_exports/` — Episode data with `exported_kpis.csv` for dashboard visualization
 
-### 10.3 Running RL Training via Docker (ModelArts-Compatible)
-
-```bash
-cd rl/
-
-# Build the training image
-docker build -f Dockerfile.huawei -t degourdi-train .
-
-# Run training inside the container
-docker run --gpus all -v $(pwd)/datasets:/app/datasets -v $(pwd)/outputs:/app/outputs degourdi-train python scripts/train_sac.py
-```
-
-**For Huawei ModelArts deployment:**
-
-```bash
-# Tag and push to Huawei SWR
-docker tag degourdi-train swr.<region>.myhuaweicloud.com/<org>/degourdi-train:latest
-docker push swr.<region>.myhuaweicloud.com/<org>/degourdi-train:latest
-
-# Then create a ModelArts training job using this custom image
-```
-
-This bypasses the platform's default PyTorch environment (which was outdated at the time of development) and brings all dependencies to their required versions.
+A ModelArts-compatible Docker image is available at **`rl/Dockerfile.huawei`**, which bundles all up-to-date dependencies and can be used as a custom image in a ModelArts training job.
 
 ### 10.4 API Endpoints Reference
 
@@ -556,7 +529,7 @@ Simultaneously, a **physics-based 5G KPI engine** computes five core network met
 
 The solution provides an optimized 5G architecture for smart city use cases involving up to 20 buildings as a proof of concept, ensuring that the resulting KPIs satisfy key 5G performance constraints.
 
-<img width="1920" height="1050" alt="image" src="https://github.com/user-attachments/assets/98dd39ab-bd22-4741-9f54-1cecafc5cf92" />
+<img style="max-width:100%;height:auto;" alt="5G Digital Twin" src="https://github.com/user-attachments/assets/98dd39ab-bd22-4741-9f54-1cecafc5cf92" />
 
 **Stack:**
 
