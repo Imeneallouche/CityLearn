@@ -29,3 +29,16 @@ export async function fetchComparison(datasetSize) {
   if (!res.ok) throw new Error(`Comparison fetch failed: ${res.status}`);
   return res.json();
 }
+
+export async function chatWithAssistant(messages) {
+  const res = await fetch(`${BASE}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages: messages.map(m => ({ role: m.role, content: m.content })) }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Chat failed (${res.status}): ${text}`);
+  }
+  return res.json();
+}

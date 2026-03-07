@@ -11,6 +11,8 @@ services:
       - ./outputs:/app/outputs:ro
       # Mount API code for live reload during development
       - ./api:/app/api:ro
+    env_file:
+      - .env
     environment:
       - PYTHONUNBUFFERED=1
     restart: unless-stopped

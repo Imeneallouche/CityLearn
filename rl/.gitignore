@@ -1,6 +1,7 @@
 .rl-citylearn/
 .venv/
 __pycache__/
+.env
 
 # datasets/
 # outputs/

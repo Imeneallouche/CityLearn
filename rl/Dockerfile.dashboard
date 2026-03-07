@@ -28,7 +28,9 @@ RUN pip install --no-cache-dir \
     pandas \
     cloudpickle \
     fastapi \
-    "uvicorn[standard]"
+    "uvicorn[standard]" \
+    agno==1.2.6 \
+    google-genai
 
 # Copy API code
 COPY api/ /app/api/

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useSimulation } from '../context/SimulationContext';
 import Header from './Header';
 import EnvironmentSidebar from './EnvironmentSidebar';
@@ -8,17 +9,32 @@ import AgentPanel from './AgentPanel';
 import KPIPanel from './KPIPanel';
 import PlaybackBar from './PlaybackBar';
 import ComparisonPanel from './ComparisonPanel';
+import ChatPanel from './ChatPanel';
 
 export default function Layout() {
   const { state } = useSimulation();
   const hasData = !!state.episode;
   const { compareMode } = state;
 
+  // chatMode: null (closed), 'popup', 'fullscreen'
+  const [chatMode, setChatMode] = useState(null);
+
+  const openChat = (mode) => setChatMode(mode || null);
+  const closeChat = () => setChatMode(null);
+  const toggleMode = () => setChatMode(prev => {
+    if (!prev) return 'popup';          // closed -> popup (from floating button)
+    if (prev === 'popup') return 'fullscreen';
+    return 'popup';                      // fullscreen -> popup
+  });
+
   return (
     <div className="flex flex-col h-screen bg-slate-50 text-slate-900 overflow-hidden">
-      <Header />
+      <Header chatMode={chatMode} onOpenChat={openChat} />
 
-      {!hasData ? (
+      {/* Chat panel (popup floats over content, fullscreen replaces it) */}
+      <ChatPanel mode={chatMode} onClose={closeChat} onToggleMode={toggleMode} />
+
+      {chatMode === 'fullscreen' ? null : !hasData ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center max-w-md space-y-4">
             <div className="w-16 h-16 mx-auto rounded-2xl bg-indigo-100 flex items-center justify-center">
