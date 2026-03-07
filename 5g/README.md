@@ -73,47 +73,89 @@ Simultaneously, a **physics-based 5G KPI engine** computes five core network met
 
 ### System Overview
 
-```
-+-------------------------------------------------------------+
-|                   React App (port 3000)                     |
-|                                                             |
-|  +--------------------+   +------------------------------+  |
-|  |  3D City Scene     |   |  5G KPI Dashboard            |  |
-|  |  react-three-fiber |   |  (real-time 3GPP formulas)   |  |
-|  |  [slider: 1-20] ---+----> compute5GKPIs()             |  |
-|  +--------------------+   +------------------------------+  |
-|              |                                              |
-|              v  POST /api/buildings                         |
-|  +------------------------------------------+               |
-|  |  setupProxy.js (CRA dev-server middleware)|              |
-|  |  --> atomic write --> state/buildings.txt |              |
-|  +------------------------------------------+               |
-+-------------------------------------------------------------+
-                       |
-             file watcher (3s poll)
-                       |
-                       v
-+-------------------------------------------------------------+
-|               scale_network.sh --watch                      |
-|                                                             |
-|  buildings.txt --> compute required groups (1-3)            |
-|                    |          |          |                  |
-|              docker start  docker start  docker start       |
-|              gnb-N         upf-edge-N   mec-node-N          |
-+-------------------------------------------------------------+
-                       |
-+-------------------------------------------------------------+
-|              free5GC Docker Compose                         |
-|                                                             |
-|  Always-on core (14 containers):                            |
-|  mongodb nrf ausf udr udm pcf nssf bsf amf smf              |
-|  upf-central webui prometheus                               |
-|                                                             |
-|  Scalable groups (up to 3 x 3 = 9 containers):              |
-|  Group 1: ueransim-gnb-1  free5gc-upf-edge-1  mec-node-1    |
-|  Group 2: ueransim-gnb-2  free5gc-upf-edge-2  mec-node-2    |
-|  Group 3: ueransim-gnb-3  free5gc-upf-edge-3  mec-node-3    |
-+-------------------------------------------------------------+
+```mermaid
+flowchart TB
+
+%% ---------------- React App ----------------
+subgraph React_App["React App (port 3000)"]
+    A["3D City Scene<br/>react-three-fiber<br/>Slider: 1–20 buildings"]
+    B["5G KPI Dashboard<br/>(real-time 3GPP formulas)"]
+    C["compute5GKPIs()"]
+
+    A --> C
+    C --> B
+
+    D["POST /api/buildings"]
+    E["setupProxy.js<br/>(CRA dev-server middleware)<br/>atomic write → state/buildings.txt"]
+
+    A --> D
+    D --> E
+end
+
+%% ---------------- File Watcher ----------------
+F["File watcher<br/>(3s poll)"]
+
+E --> F
+
+%% ---------------- Scaling Script ----------------
+subgraph Scaling_Script["scale_network.sh --watch"]
+    G["buildings.txt"]
+    H["Compute required groups (1–3)"]
+
+    I["docker start gnb-N"]
+    J["docker start upf-edge-N"]
+    K["docker start mec-node-N"]
+
+    G --> H
+    H --> I
+    H --> J
+    H --> K
+end
+
+F --> G
+
+%% ---------------- free5GC ----------------
+subgraph Free5GC["free5GC Docker Compose"]
+
+subgraph Core["Always-on Core (14 containers)"]
+    C1["mongodb"]
+    C2["nrf"]
+    C3["ausf"]
+    C4["udr"]
+    C5["udm"]
+    C6["pcf"]
+    C7["nssf"]
+    C8["bsf"]
+    C9["amf"]
+    C10["smf"]
+    C11["upf-central"]
+    C12["webui"]
+    C13["prometheus"]
+end
+
+subgraph Group1["Group 1"]
+    G1A["ueransim-gnb-1"]
+    G1B["free5gc-upf-edge-1"]
+    G1C["mec-node-1"]
+end
+
+subgraph Group2["Group 2"]
+    G2A["ueransim-gnb-2"]
+    G2B["free5gc-upf-edge-2"]
+    G2C["mec-node-2"]
+end
+
+subgraph Group3["Group 3"]
+    G3A["ueransim-gnb-3"]
+    G3B["free5gc-upf-edge-3"]
+    G3C["mec-node-3"]
+end
+
+end
+
+I --> G1A
+J --> G1B
+K --> G1C
 ```
 
 ### 5G Network Design
