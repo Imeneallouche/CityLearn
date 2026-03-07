@@ -8,8 +8,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from .config import SIM_DIR, discover_models, get_dataset_schema, get_building_names
+from .config import discover_models, get_dataset_schema, get_building_names, get_static_dir, DATASET_MAP
 from .data import load_episode_data, load_carbon_intensity
+from .baselines import get_baseline_data, list_baselines
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -111,15 +112,74 @@ def health():
 
 
 # ──────────────────────────────────────────────
-#  Static files (Simulation UI)
+#  Baseline / Comparison Routes
 # ──────────────────────────────────────────────
 
-if SIM_DIR.exists():
-    app.mount("/static", StaticFiles(directory=str(SIM_DIR)), name="static")
+@app.get("/api/baselines/{dataset_size}")
+def get_baselines(dataset_size: str):
+    """List available baseline agent types for a dataset size."""
+    dataset_name = DATASET_MAP.get(dataset_size)
+    if not dataset_name:
+        raise HTTPException(404, f"No dataset for size: {dataset_size}")
+    return {"baselines": list_baselines(dataset_name)}
 
-    @app.get("/")
-    def serve_index():
-        index_path = SIM_DIR / "index.html"
+
+@app.get("/api/baselines/{dataset_size}/{agent_type}")
+def get_baseline(dataset_size: str, agent_type: str):
+    """Run or return cached baseline agent episode for comparison."""
+    dataset_name = DATASET_MAP.get(dataset_size)
+    if not dataset_name:
+        raise HTTPException(404, f"No dataset for size: {dataset_size}")
+    try:
+        data = get_baseline_data(dataset_name, agent_type)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        logger.exception("Baseline generation failed")
+        raise HTTPException(500, f"Baseline generation failed: {e}")
+    return data
+
+
+@app.get("/api/compare/{dataset_size}")
+def compare_models(dataset_size: str):
+    """Return KPIs for all models on the same dataset for cross-model comparison."""
+    results = []
+    for m in _models_cache:
+        if str(m["dataset_size"]) != dataset_size:
+            continue
+        # Use the latest episode for KPI comparison
+        if not m["episodes"]:
+            continue
+        latest_ep = m["episodes"][-1]
+        ep_data = load_episode_data(m, latest_ep)
+        if ep_data and ep_data.get("kpis"):
+            results.append({
+                "model_id": m["model_id"],
+                "algorithm": m["algorithm"],
+                "reward_variant": m["reward_variant"],
+                "episode": latest_ep,
+                "kpis": ep_data["kpis"],
+            })
+    return {"dataset_size": dataset_size, "models": results}
+
+
+# ──────────────────────────────────────────────
+#  Static files (React SPA)
+# ──────────────────────────────────────────────
+
+_ui_dir = get_static_dir()
+if _ui_dir:
+
+    @app.get("/{full_path:path}")
+    def serve_spa(full_path: str):
+        """Serve static files or fall back to index.html for SPA routing."""
+        if full_path:
+            file_path = (_ui_dir / full_path).resolve()
+            # Prevent path traversal outside the UI directory
+            if file_path.is_relative_to(_ui_dir.resolve()) and file_path.is_file():
+                return FileResponse(str(file_path))
+        # SPA fallback: always return index.html
+        index_path = _ui_dir / "index.html"
         if index_path.exists():
             return FileResponse(str(index_path))
         raise HTTPException(404, "UI not found")

@@ -7,6 +7,18 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATASETS_DIR = PROJECT_ROOT / "datasets"
 OUTPUTS_DIR = PROJECT_ROOT / "outputs"
 SIM_DIR = PROJECT_ROOT / "sim"
+SIM_DIST_DIR = PROJECT_ROOT / "sim-dist"  # React production build output
+
+
+def get_static_dir() -> Path | None:
+    """Return the directory containing the built UI assets.
+    Prefers sim-dist/ (Docker production build) over sim/ (dev fallback).
+    """
+    if SIM_DIST_DIR.exists():
+        return SIM_DIST_DIR
+    if SIM_DIR.exists() and (SIM_DIR / "index.html").exists():
+        return SIM_DIR
+    return None
 
 DATASET_MAP = {
     "3": "citylearn_challenge_2023_phase_2_local_evaluation",

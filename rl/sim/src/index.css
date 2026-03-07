@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #f8fafc;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Range input */
+input[type="range"] {
+  -webkit-appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: #e2e8f0;
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #6366f1;
+  cursor: grab;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.2);
+  transition: box-shadow 0.15s;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 5px rgba(99,102,241,0.25);
+}
+
+/* Energy flow animation */
+@keyframes flow-right {
+  to { stroke-dashoffset: -20; }
+}
+@keyframes flow-left {
+  to { stroke-dashoffset: 20; }
+}
+@keyframes flow-down {
+  to { stroke-dashoffset: -20; }
+}
+.flow-animated-right {
+  animation: flow-right 0.6s linear infinite;
+}
+.flow-animated-left {
+  animation: flow-left 0.6s linear infinite;
+}
+.flow-animated-down {
+  animation: flow-down 0.6s linear infinite;
+}
+
+/* Card base */
+.card {
+  @apply bg-white rounded-xl border border-slate-200 shadow-sm;
+}
+.card-header {
+  @apply px-4 py-3 border-b border-slate-100 flex items-center gap-2;
+}
+.card-header h3 {
+  @apply text-xs font-semibold uppercase tracking-wider text-slate-500;
+}
+.card-body {
+  @apply p-4;
+}
+
+/* Tabular numbers for data */
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* RL Agent action attention animations */
+@keyframes action-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.action-pulse {
+  animation: action-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes action-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+  50% { box-shadow: 0 0 8px 2px rgba(99, 102, 241, 0.15); }
+}
+.action-highlight {
+  animation: action-glow 2s ease-in-out infinite;
+}
+
+/* Comparison overlay transition */
+.compare-enter {
+  animation: slideUp 0.25s ease-out;
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
