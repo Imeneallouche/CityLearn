@@ -14,8 +14,7 @@ The structure is intentionally simple:
 3. Final smooth conclusion
 ---
 
-## Part I - RL (Verbatim from `docs/RL.md`)
-
+## Part I - RL 
 # Multi-Agent Reinforcement Learning for Smart District Energy Optimization
 
 For this hackathon submission to **Smart Cities & Renewable Energy - AI, 5G & Digital Power**, the work is framed around renewable energy integration in cities through AI-driven district control that supports sustainable urban infrastructure, intelligent mobility, and digital public services.
@@ -369,35 +368,178 @@ Interpretation:
 
 ---
 
-## 9. Placeholder: Virtual Agent Assistant (To Be Filled)
+## 9. Virtual Agent Assistant
 
 ### 9.1 Role and Objectives
 
-_To be completed by teammate_
+The platform includes a conversational AI assistant that serves as an expert analyst for the CityLearn RL system. Its role is to make trained models, KPI results, and algorithmic concepts accessible to non-expert users through natural language interaction.
+
+The assistant is powered by **Google Gemini 2.5 Flash** via the **Agno agent framework**, and is equipped with 10 purpose-built tools that expose the full platform data layer. Rather than displaying raw data, it translates tool outputs into structured, human-readable prose â€” acting as a senior analyst who presents polished briefings.
+
+Core objectives:
+
+- **Model exploration**: List all trained models, inspect metadata (algorithm, reward variant, policy type, checkpoints), and explain training configurations.
+- **Performance analysis**: Retrieve and interpret normalized KPI metrics for any episode, comparing RL agents against no-op and rule-based baselines.
+- **Cross-model comparison**: Compare all models on the same dataset side by side, highlighting which algorithmâ€“reward combination performs best.
+- **Education**: Explain the CityLearn environment, SAC, MARLISA, and RBC algorithms, observation/action spaces, and reward functions on demand.
+- **Building and dataset inspection**: Surface per-building equipment specs (PV capacity, battery size, cooling/DHW devices) and dataset configuration details.
 
 ### 9.2 Architecture and Interaction Flow
 
-_To be completed by teammate_
+The assistant follows a **tool-augmented generation** pattern:
+
+1. The user sends a natural language query via the chat panel.
+2. The **FastAPI backend** (`POST /api/chat`) forwards the message to the Agno agent.
+3. The agent's system prompt instructs it to call the appropriate tool(s) before answering â€” ensuring responses are always grounded in actual platform data.
+4. Tool functions execute against the model discovery layer (`config.py`) and episode data loader (`data.py`), returning structured JSON internally.
+5. The agent synthesizes tool outputs into narrative prose with headings, bullet points, and bold highlights, following strict formatting guidelines in its system prompt.
+6. The response is returned to the frontend, which renders it with Markdown support and displays tool call badges (e.g., "Analyzed KPIs", "Compared models") so the user can see which data sources were consulted.
+
+**Available tools:**
+
+| Tool | Purpose |
+|---|---|
+| `list_trained_models` | Catalog all discovered models with algorithm, reward, episodes, checkpoints |
+| `get_model_details` | Full metadata and training config for a specific model |
+| `get_episode_kpis` | Normalized KPI metrics for a given episode |
+| `get_episode_summary` | Timeseries summary statistics (consumption, solar, COâ‚‚, cost, per-building battery usage) |
+| `compare_models` | Cross-algorithm KPI comparison on the same dataset |
+| `get_building_info` | Per-building equipment specs (PV, battery, cooling, DHW) |
+| `get_dataset_info` | Dataset schema, building list, simulation parameters |
+| `explain_citylearn` | Comprehensive explanation of the CityLearn environment |
+| `explain_algorithm` | Detailed explanation of SAC, MARLISA, or RBC |
+| `get_baseline_comparison` | Side-by-side KPI comparison of an RL model vs. a baseline agent |
 
 ### 9.3 Safety, Guardrails, and User Experience
 
-_To be completed by teammate_
+**Data-grounded responses**: The system prompt mandates that the agent call tools to fetch actual numbers before answering performance questions, preventing hallucinated metrics.
+
+**Clean output**: A post-processing pipeline strips raw JSON artifacts, tool-call noise (e.g., `Running: func_name(...)` lines), and excessive whitespace from agent responses before they reach the frontend, ensuring the user only sees polished prose.
+
+**Structured formatting**: The system prompt enforces a strict response style â€” one-sentence summary lead, organized headings, bullet points, bold highlights for key numbers, and a closing takeaway. KPI values are always contextualized (e.g., "a cost KPI of **0.82** means an **18% reduction** vs. baseline").
+
+**Tool call transparency**: Each tool invocation is surfaced in the chat UI as a labeled badge with a contextual icon (e.g., a bar-chart icon for "Analyzed KPIs", a flask icon for "Explained algorithm"), so users understand what data the assistant consulted.
+
+**Graceful error handling**: If a model or episode is not found, tools return descriptive error messages listing available options, allowing the agent to guide the user to valid queries.
+
+**Conversation modes**: The chat panel supports both a popup overlay (for quick questions while viewing the dashboard) and a fullscreen mode (for extended analytical conversations), togglable via a header button.
 
 ---
 
-## 10. Placeholder: UI Screenshots and User Journey (To Be Filled)
+## 10. UI Screenshots and User Journey
 
 ### 10.1 Main Screenshots
 
-_To be completed by teammate_
+**Screenshot 1 â€” Landing State: Model and Episode Selection**
+
+![Landing State](./assets/ui_landing.png)
+
+The initial view presented when the dashboard loads. The header bar shows the CityLearn branding, a model selector dropdown (listing all discovered models in `ALGORITHM / reward_variant / N buildings` format), an episode selector, and a Load button. The center area displays an empty-state prompt: *"Select a trained model and episode above, then click Load to visualize the RL agent's energy management decisions across a multi-building district."*
+
+---
+
+**Screenshot 2 â€” Main Dashboard: Three-Panel Layout**
+
+![Main Dashboard](./assets/ui_dashboard.png)
+
+The primary operational view after loading an episode. A three-column layout: the left sidebar shows environment controls (building selection, dataset info, available baselines); the center panel displays the energy flow Sankey diagram, the building grid with per-building state cards, and community-level consumption/solar timeseries charts; the right panel shows the KPI panel with six normalized metric cards and a bar chart, plus the agent information panel with policy type and training configuration.
+
+---
+
+**Screenshot 3 â€” Building Grid: Per-Building State Cards**
+
+![Building Grid](./assets/ui_building_grid.png)
+
+A grid of building cards within the center panel. Each card shows the building name, real-time battery state-of-charge (SOC), net consumption, and indoor temperature. Cards are color-coded based on metric values (e.g., green for healthy SOC, red for high consumption), giving a quick visual overview of the district state at the current timestep.
+
+---
+
+**Screenshot 4 â€” Energy Flow: Sankey Diagram**
+
+![Energy Flow](./assets/ui_energy_flow.png)
+
+A Sankey-style energy flow visualization showing how energy moves through the district at each timestep â€” from solar generation through battery storage to grid import/export. Displays per-building and community-level energy balances, making it easy to see which buildings are charging, discharging, or drawing from the grid.
+
+---
+
+**Screenshot 5 â€” Community Charts: District-Level Timeseries**
+
+![Community Charts](./assets/ui_community_charts.png)
+
+Line and area charts showing district-level timeseries data over the full episode. Includes net consumption over time, solar generation overlay, and peak demand indicators. These charts reveal the aggregate impact of the RL agents' coordinated (or uncoordinated) storage actions on district load shape.
+
+---
+
+**Screenshot 6 â€” KPI Panel: Performance Metrics**
+
+![KPI Panel](./assets/ui_kpi_panel.png)
+
+The right-sidebar KPI panel showing six normalized performance metrics: cost, carbon emissions, electricity consumption, peak demand, daily peak, load factor, and ramping. Each metric is displayed as a card with the normalized value and a color-coded interpretation (green when < 1.0, indicating the RL agent outperforms the no-op baseline). A bar chart below provides a visual comparison of all KPIs at a glance.
+
+---
+
+**Screenshot 7 â€” Playback Bar: Timeline Scrubber**
+
+![Playback Bar](./assets/ui_playback.png)
+
+A bottom-docked playback control bar for stepping through the episode timeline. Includes play/pause controls, a speed adjustment slider (milliseconds per timestep), a timeline scrubber showing the current timestep position, and a timestamp display. Enables animated replay of the full episode to observe how agent decisions evolve over time.
+
+---
+
+**Screenshot 8 â€” Comparison Mode: Model vs. Baseline**
+
+![Comparison Mode](./assets/ui_comparison.png)
+
+The comparison panel activated via the header toggle. The right sidebar expands to show side-by-side KPI tables comparing the loaded RL model against a baseline agent (no-op or RBC). Delta calculations highlight improvements or regressions for each metric. Users can also load a second trained model for agent-vs-agent comparison.
+
+---
+
+**Screenshot 9 â€” AI Assistant: Chat Panel (Popup Mode)**
+
+![Chat Popup](./assets/ui_chat_popup.png)
+
+The AI assistant chat panel in popup mode, floating over the main dashboard content. Shows a conversation with user/assistant message bubbles, Markdown-rendered responses with headings and bullet points, and tool call badges (e.g., "Analyzed KPIs", "Compared models") displayed as labeled pills with contextual icons. A text input field and send button are anchored at the bottom.
+
+---
+
+**Screenshot 10 â€” AI Assistant: Chat Panel (Fullscreen Mode)**
+
+![Chat Fullscreen](./assets/ui_chat_fullscreen.png)
+
+The AI assistant in fullscreen mode, replacing the main dashboard content for extended analytical conversations. The wider layout provides more reading space for detailed responses. A toggle button in the header switches between popup and fullscreen modes. The conversation thread, tool call badges, and Markdown formatting are identical to popup mode but scaled for the larger viewport.
 
 ### 10.2 User Flow Annotations
 
-_To be completed by teammate_
+A typical user journey through the dashboard follows this sequence:
+
+1. **Select model** â€” Choose an algorithm/reward/dataset combination from the header dropdown (e.g., `MARLISA / marl / 3 buildings`).
+2. **Select episode** â€” Pick an evaluation episode from the episode dropdown (e.g., `marlisa_eval_ep_0200`).
+3. **Load** â€” Click the Load button. The backend fetches and merges CSV data; the dashboard transitions from the landing state to the three-panel layout.
+4. **Explore buildings** â€” Review per-building cards in the building grid. Click a building in the left sidebar to highlight it. Inspect battery SOC, consumption, and temperature.
+5. **Analyze energy flows** â€” Examine the Sankey diagram to understand how solar energy is routed through storage to offset grid demand.
+6. **Review district performance** â€” Scroll to the community charts to see aggregate consumption profiles and solar generation over the episode timeline.
+7. **Check KPIs** â€” Review the right-panel KPI cards to see how the agent performs vs. the baseline across cost, carbon, peak demand, and other metrics.
+8. **Playback** â€” Use the playback bar to animate the episode and watch how agent decisions evolve hour by hour across the simulation period.
+9. **Compare** â€” Toggle comparison mode to load a baseline or competing model and view side-by-side KPI deltas.
+10. **Ask the assistant** â€” Open the AI chat panel to ask natural language questions (e.g., "How does MARLISA compare to SAC on the 3-building dataset?" or "Which model has the lowest peak demand?").
 
 ### 10.3 Demo Script Notes
 
-_To be completed by teammate_
+**Opening (30s)**: Start at the landing screen. Briefly explain the platform purpose â€” multi-agent RL for district energy optimization using CityLearn.
+
+**Model loading (30s)**: Select `MARLISA / marl / 3 buildings`, pick the latest episode, and click Load. Point out the three-panel layout as it appears.
+
+**Building exploration (45s)**: Walk through the building grid cards. Highlight how different buildings have different battery utilization patterns. Show the energy flow Sankey diagram to illustrate solar-to-battery-to-grid flows.
+
+**District analysis (45s)**: Scroll to community charts. Point out how MARLISA's coordination smooths the aggregate load profile compared to uncoordinated baselines. Show the KPI panel â€” highlight that key metrics are below 1.0, confirming the agent outperforms the no-op baseline.
+
+**Playback (30s)**: Hit play on the playback bar. Animate a few timesteps to show how building states, energy flows, and KPIs update in real time.
+
+**Comparison (45s)**: Toggle comparison mode. Load the RBC baseline. Walk through the side-by-side KPI table, pointing out where MARLISA achieves the largest improvements (e.g., peak demand, cost).
+
+**AI Assistant (60s)**: Open the chat panel. Ask: *"Compare all models on the 3-building dataset."* Show how the assistant calls `compare_models`, displays tool call badges, and returns a structured prose response with a clear verdict. Follow up with: *"Explain how MARLISA coordination works."* Show the `explain_algorithm` tool being invoked and the educational response.
+
+**Closing (15s)**: Summarize key takeaway â€” reward design plus lightweight coordination (MARLISA + MARL reward) yields the strongest district-level performance, and the platform makes these results explorable and explainable.
 
 ---
 
@@ -413,9 +555,9 @@ _To be completed by teammate_
 
 ---
 
-## Part II - 5G (Verbatim from `docs/5G.md`)
+## Part II - 5G 
 
-# CityLearn â€” 5G Smart City Digital Twin
+# CityLearn — 5G Smart City Digital Twin
 
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](https://reactjs.org)
 [![Three.js](https://img.shields.io/badge/Three.js-r134-black?logo=three.js)](https://threejs.org)
@@ -423,7 +565,7 @@ _To be completed by teammate_
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)](https://docker.com)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-> Implementing 5G across a smart city is not an easy task, because different use cases impose conflicting KPIs. For example, connected smart vehicles need an uRLLC (Ultra-Reliable Low Latency Communication) slice targeting end-to-end latencies on the order of 1 ms, smart homes produce massive sensor traffic that requires an mMTC (Massive Machine Type Communications) slice optimized for device density and uplink efficiency, and remote learning or media demand eMBB (Enhanced Mobile Broadband) slices that prioritize throughput and spectral efficiency. Thatâ€™s why we built CityLearn â€” a real-time 5G infrastructure digital twin that scales with your city, updates KPIs when you add or remove smart city buildings, and recommends the most optimized 5G architecture, with the optimized set of gNBs, UPFs and MEC compute nodes to satisfy the three slice profiles of your 5G. The platform is integrated with a live 5G core (free5gc) so you can watch containerized network functions start, fail, and recover, while scientifically grounded KPI calculations based on 3GPP models run and change in real time.
+> Implementing 5G across a smart city is not an easy task, because different use cases impose conflicting KPIs. For example, connected smart vehicles need an uRLLC (Ultra-Reliable Low Latency Communication) slice targeting end-to-end latencies on the order of 1 ms, smart homes produce massive sensor traffic that requires an mMTC (Massive Machine Type Communications) slice optimized for device density and uplink efficiency, and remote learning or media demand eMBB (Enhanced Mobile Broadband) slices that prioritize throughput and spectral efficiency. That’s why we built CityLearn — a real-time 5G infrastructure digital twin that scales with your city, updates KPIs when you add or remove smart city buildings, and recommends the most optimized 5G architecture, with the optimized set of gNBs, UPFs and MEC compute nodes to satisfy the three slice profiles of your 5G. The platform is integrated with a live 5G core (free5gc) so you can watch containerized network functions start, fail, and recover, while scientifically grounded KPI calculations based on 3GPP models run and change in real time.
 
 > As a result, Our solution provided an optimized 5G architecture for smart city use cases involving up to 20 smart city buildings as a proof of concept, ensuring that the resulting KPIs satisfy key 5G performance constraints.
 
@@ -457,9 +599,9 @@ _To be completed by teammate_
 
 ## Overview
 
-**CityLearn** bridges the gap between a 3D smart-city simulation and a real, running 5G core network integrated directly within it. While most digital twins are purely visual, CityLearnâ€™s 3D environment acts as a **live control plane**. By simply modifying the number of smart city buildings in the city, the platform automatically provisions and deprovisions Docker containers running the 5G infrastructure, including the 5G Standalone (SA) core from [free5GC](https://free5gc.org), gNB simulators using [UERANSIM](https://github.com/aligungr/UERANSIM), and custom MEC nodes.
+**CityLearn** bridges the gap between a 3D smart-city simulation and a real, running 5G core network integrated directly within it. While most digital twins are purely visual, CityLearn’s 3D environment acts as a **live control plane**. By simply modifying the number of smart city buildings in the city, the platform automatically provisions and deprovisions Docker containers running the 5G infrastructure, including the 5G Standalone (SA) core from [free5GC](https://free5gc.org), gNB simulators using [UERANSIM](https://github.com/aligungr/UERANSIM), and custom MEC nodes.
 
-Simultaneously, a **physics-based 5G KPI engine** computes five core network metrics in real time using 3GPP-specified formulas â€” peak cell capacity, average UE throughput, per-slice latency, packet loss, and connection density â€” every time the building configuration changes.
+Simultaneously, a **physics-based 5G KPI engine** computes five core network metrics in real time using 3GPP-specified formulas — peak cell capacity, average UE throughput, per-slice latency, packet loss, and connection density — every time the building configuration changes.
 
 **Stack at a glance:**
 
@@ -470,19 +612,19 @@ Simultaneously, a **physics-based 5G KPI engine** computes five core network met
 | RAN Simulator | UERANSIM gNB x3 (one per slice) |
 | Edge Compute | Custom MEC nodes co-located per gNB |
 | Infra Orchestration | Docker Compose + Bash/Python auto-scaler |
-| State Bridge | CRA setupProxy.js middleware â€” no separate backend |
+| State Bridge | CRA setupProxy.js middleware — no separate backend |
 
 ---
 
 ## Novelty and Key Contributions
 
-1. **Zero-backend infrastructure bridge** â€” The React dev-server middleware (`setupProxy.js`) intercepts `POST /api/buildings`, atomically writes `state/buildings.txt`, and the watching shell script provisions Docker containers. No Express server, no database, no message queue needed.
+1. **Zero-backend infrastructure bridge** — The React dev-server middleware (`setupProxy.js`) intercepts `POST /api/buildings`, atomically writes `state/buildings.txt`, and the watching shell script provisions Docker containers. No Express server, no database, no message queue needed.
 
-2. **Real-time 3GPP-compliant KPI engine** â€” All five KPIs are derived from closed-form 3GPP formulas (TS 38.306, TR 38.913, TS 38.214), not mock data or random numbers. Changing one building updates all KPIs within the same React render cycle.
+2. **Real-time 3GPP-compliant KPI engine** — All five KPIs are derived from closed-form 3GPP formulas (TS 38.306, TR 38.913, TS 38.214), not mock data or random numbers. Changing one building updates all KPIs within the same React render cycle.
 
-3. **Demand-driven 5G infrastructure scaling** â€” The city UI is the actual control plane. Slider to file to Docker: the 5G infrastructure responds to UI events, demonstrating intent-based network management.
+3. **Demand-driven 5G infrastructure scaling** — The city UI is the actual control plane. Slider to file to Docker: the 5G infrastructure responds to UI events, demonstrating intent-based network management.
 
-4. **Scientifically optimised radio parameters** â€” 64T64R Massive MIMO, 8-layer MU-MIMO spatial multiplexing, 256-QAM, DDDSU TDD frame, n78 100 MHz producing a verified **3,472 Mbps peak per gNB**, **2.1 ms eMBB latency**, and **0.879 ms URLLC latency**.
+4. **Scientifically optimised radio parameters** — 64T64R Massive MIMO, 8-layer MU-MIMO spatial multiplexing, 256-QAM, DDDSU TDD frame, n78 100 MHz producing a verified **3,472 Mbps peak per gNB**, **2.1 ms eMBB latency**, and **0.879 ms URLLC latency**.
 
 ---
 
@@ -495,7 +637,7 @@ flowchart TB
 
 %% ---------------- React App ----------------
 subgraph React_App["React App (port 3000)"]
-    A["3D City Scene<br/>react-three-fiber<br/>Slider: 1â€“20 buildings"]
+    A["3D City Scene<br/>react-three-fiber<br/>Slider: 1–20 buildings"]
     B["5G KPI Dashboard<br/>(real-time 3GPP formulas)"]
     C["compute5GKPIs()"]
 
@@ -503,7 +645,7 @@ subgraph React_App["React App (port 3000)"]
     C --> B
 
     D["POST /api/buildings"]
-    E["setupProxy.js<br/>(CRA dev-server middleware)<br/>atomic write â†’ state/buildings.txt"]
+    E["setupProxy.js<br/>(CRA dev-server middleware)<br/>atomic write → state/buildings.txt"]
 
     A --> D
     D --> E
@@ -517,7 +659,7 @@ E --> F
 %% ---------------- Scaling Script ----------------
 subgraph Scaling_Script["scale_network.sh --watch"]
     G["buildings.txt"]
-    H["Compute required groups (1â€“3)"]
+    H["Compute required groups (1–3)"]
 
     I["docker start gnb-N"]
     J["docker start upf-edge-N"]
@@ -582,7 +724,7 @@ Architecture: **5G Standalone (SA)** + **Multi-access Edge Computing (MEC)** + *
 | Network Function | Role |
 |---|---|
 | AMF | Access and Mobility Management |
-| SMF | Session Management â€” selects edge UPF per slice |
+| SMF | Session Management — selects edge UPF per slice |
 | UPF central | Always-on traffic anchor |
 | UPF edge 1-3 | Local breakout at gNB site, less than 2 ms MEC latency |
 | NRF | Service discovery for all NFs |
@@ -597,7 +739,7 @@ Architecture: **5G Standalone (SA)** + **Multi-access Edge Computing (MEC)** + *
 |---|---|---|---|---|
 | eMBB | 1 | Dashboards, video | less than 4 ms | 99.99% |
 | URLLC | 2 | Grid control, safety | less than 1 ms | 99.999% |
-| mMTC | 3 | IoT sensors, meters | less than 10 ms | â€” |
+| mMTC | 3 | IoT sensors, meters | less than 10 ms | — |
 
 ### Data Flow
 
@@ -617,7 +759,7 @@ Per **3GPP TR 38.913** urban micro-cell, one gNB per 8 buildings (ISD ~300 m):
 
 | Buildings | Active gNBs | Edge UPFs | MEC Nodes | Containers Started |
 |---|---|---|---|---|
-| 0 | 0 | 0 | 0 | â€” |
+| 0 | 0 | 0 | 0 | — |
 | 1 to 8 | 1 | 1 | 1 | Group 1 (3 containers) |
 | 9 to 16 | 2 | 2 | 2 | Groups 1+2 (6 containers) |
 | 17 to 20 | 3 | 3 | 3 | Groups 1+2+3 (9 containers) |
@@ -633,12 +775,12 @@ All KPIs are computed in `src/pages/HomePage.jsx` using the `PHY` constants obje
 | Parameter | Value | Specification |
 |---|---|---|
 | Band | n78 (3.3-3.8 GHz TDD) | 3GPP TS 38.101-1 |
-| Channel BW | 100 MHz | â€” |
+| Channel BW | 100 MHz | — |
 | Numerology | mu=1, SCS=30 kHz | 3GPP TS 38.211 |
 | PRBs | 273 | 3GPP TS 38.101-1 Table 5.3.2-1 |
-| MIMO | 64T64R gNB / 4T4R UE | â€” |
+| MIMO | 64T64R gNB / 4T4R UE | — |
 | DL layers | 8 (MU-MIMO ZF) | 3GPP TR 38.306 |
-| Modulation | 256-QAM (Q_m=8) | â€” |
+| Modulation | 256-QAM (Q_m=8) | — |
 | Max code rate | R_max = 948/1024 | 3GPP TS 38.214 Table 5.1.3.1-2 |
 | TDD DL ratio | 74.3% (DDDSU) | 3GPP TR 38.211 |
 | Scheduler efficiency | 78% | 3GPP system-level sims |
@@ -653,7 +795,7 @@ R_peak = layers x Q_m x R_max x N_RB x 12 x f_slot x TDD_DL x (1 - OH_DL)
 
 where layers=8, f_slot=2000 slots/s (mu=1), OH_DL=14% overhead.
 
-**Verified result:** 3,472 Mbps peak per gNB Â· 2,708 Mbps effective (x0.78 scheduler efficiency)
+**Verified result:** 3,472 Mbps peak per gNB · 2,708 Mbps effective (x0.78 scheduler efficiency)
 
 ### KPI 2 Average UE Throughput
 
@@ -698,7 +840,7 @@ P_overflow = 0         for rho < 0.80
            = (rho-0.80)^2 x 5          for rho >= 0.80
 ```
 
-**Verified results:** eMBB = 0.0100% (4 HARQ rounds) Â· URLLC = 0.1000% (single shot)
+**Verified results:** eMBB = 0.0100% (4 HARQ rounds) · URLLC = 0.1000% (single shot)
 
 ### KPI 5 Connection Density
 
@@ -709,7 +851,7 @@ rho_conn = N_connected / (gNBs x A_hex)
 A_hex    = (sqrt(3)/2) x ISD^2         [hexagonal cell area, ISD=300m]
 ```
 
-**Verified result:** 3,935 UE/km^2 at 20 buildings / 3 gNBs Â· max theoretical 10^6 UE/km^2 (mMTC per 3GPP TR 38.913)
+**Verified result:** 3,935 UE/km^2 at 20 buildings / 3 gNBs · max theoretical 10^6 UE/km^2 (mMTC per 3GPP TR 38.913)
 
 ---
 
@@ -750,7 +892,7 @@ A_hex    = (sqrt(3)/2) x ISD^2         [hexagonal cell area, ISD=300m]
 | Requirement | Version | Notes |
 |---|---|---|
 | Node.js | 18 or higher | For React app |
-| npm | 9 or higher | â€” |
+| npm | 9 or higher | — |
 | Docker | 24 or higher | With Compose v2 plugin |
 | Docker Compose | v2 | Use `docker compose` not `docker-compose` |
 | bash | 4 or higher | For scale script |
@@ -801,7 +943,7 @@ sleep 15 && docker compose ps
 ### 4. Start the Auto-Scaler
 
 ```bash
-# From free5gc/ â€” watches buildings.txt and scales Docker containers
+# From free5gc/ — watches buildings.txt and scales Docker containers
 ./scale.sh --watch --file /absolute/path/to/client/state/buildings.txt
 ```
 
@@ -828,11 +970,11 @@ docker ps --format "table {{.Names}}\t{{.Status}}" | grep -E "gnb|upf-edge|mec"
 
 ## Demo Walkthrough
 
-1. **Drag the Buildings slider** (top-center) â€” the 3D city updates instantly.
-2. **Watch the KPI Dashboard** (left panel) â€” all five 5G KPIs recalculate in real time. Hover any KPI block to expand its formula.
-3. **Observe Docker** â€” within 3-6 seconds of crossing a group boundary (8 or 16 buildings), gNB + UPF + MEC containers start or stop.
-4. **Click any building** â€” the right panel shows per-building KPIs with full latency breakdown.
-5. **Open the "5G Arch" modal** â€” complete formula reference and slice specifications.
+1. **Drag the Buildings slider** (top-center) — the 3D city updates instantly.
+2. **Watch the KPI Dashboard** (left panel) — all five 5G KPIs recalculate in real time. Hover any KPI block to expand its formula.
+3. **Observe Docker** — within 3-6 seconds of crossing a group boundary (8 or 16 buildings), gNB + UPF + MEC containers start or stop.
+4. **Click any building** — the right panel shows per-building KPIs with full latency breakdown.
+5. **Open the "5G Arch" modal** — complete formula reference and slice specifications.
 
 **Key thresholds:**
 
@@ -915,4 +1057,5 @@ This is expected at high building counts where queue load rho > 0.1. The archite
 Together, these two parts form one integrated hackathon submission: RL provides intelligent district energy decisions, and 5G provides the resilient city-scale network layer needed to operationalize smart services.
 
 In short: better renewable energy behavior, scalable urban infrastructure, mobility-ready connectivity, and a clear path toward digital public services.
+
 
