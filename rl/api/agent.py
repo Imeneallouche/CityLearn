@@ -106,7 +106,7 @@ def get_model_details(model_id: str) -> str:
         }
     elif model["algorithm"] == "marlisa":
         info["training_config"] = {
-            "algorithm": "MAPPO (Multi-Agent PPO)" if model["reward_variant"] == "marl" else "MAPPO with solar penalty",
+            "algorithm": "MARLISA" if model["reward_variant"] == "marl" else "MARLISA with solar penalty",
             "framework": "PyTorch",
             "learning_rate": 3e-4,
             "gamma": 0.99,
@@ -440,7 +440,7 @@ def explain_algorithm(algorithm_name: str) -> str:
     """Explain a specific RL algorithm used in this project.
 
     Args:
-        algorithm_name: One of 'sac', 'mappo', 'marlisa', or 'rbc'.
+        algorithm_name: One of 'sac', 'marlisa', or 'rbc'.
 
     Returns a detailed explanation of the algorithm, its key characteristics,
     hyperparameters used, and how it's applied in the CityLearn context.
@@ -471,40 +471,6 @@ def explain_algorithm(algorithm_name: str) -> str:
                 "Shared policy treats each building identically",
             ],
         },
-        "mappo": {
-            "full_name": "Multi-Agent Proximal Policy Optimization (MAPPO)",
-            "type": "On-policy, model-free, actor-critic with CTDE",
-            "key_idea": (
-                "MAPPO extends PPO to multi-agent settings using Centralized Training with "
-                "Decentralized Execution (CTDE). During training, the shared critic sees data "
-                "from all agents. During execution, each agent acts based only on its local observation."
-            ),
-            "in_this_project": {
-                "parameter_sharing": "All agents share ONE policy network",
-                "separate_value_network": "vf_share_layers=False — critic has its own parameters",
-                "hyperparameters": {
-                    "learning_rate": 3e-4,
-                    "gamma": 0.99,
-                    "lambda_gae": 0.95,
-                    "clip_param": 0.2,
-                    "vf_loss_coeff": 0.5,
-                    "entropy_coeff": 0.01,
-                    "train_batch_size": 256,
-                    "minibatch_size": 64,
-                    "sgd_epochs": 10,
-                },
-                "network": "2-layer MLP [256, 256] with ReLU activation",
-            },
-            "strengths": [
-                "CTDE enables coordination during training while keeping decentralized execution",
-                "Parameter sharing dramatically reduces model size for many agents",
-                "PPO clipping prevents destructive policy updates",
-            ],
-            "weaknesses": [
-                "On-policy: cannot reuse old experience (less sample-efficient than SAC)",
-                "Shared policy assumes homogeneous agents",
-            ],
-        },
         "marlisa": {
             "full_name": "Multi-Agent RL with Iterative Sequential Action (MARLISA)",
             "type": "Coordination wrapper extending base MARL algorithms",
@@ -522,7 +488,7 @@ def explain_algorithm(algorithm_name: str) -> str:
                     "c1": "Cumulative energy coefficient — encodes ordering information based on electrical storage capacity",
                 },
                 "energy_weighting": "Agents are weighted by their electrical storage capacity relative to total district capacity",
-                "base_algorithm": "Combined with MAPPO for training",
+                "base_algorithm": "Combined with SAC for training",
             },
             "strengths": [
                 "Enables emergent coordination without explicit communication",
@@ -565,7 +531,7 @@ def explain_algorithm(algorithm_name: str) -> str:
     return json.dumps({
         "error": f"Unknown algorithm: '{algorithm_name}'",
         "available": list(algorithms.keys()),
-        "hint": "Try 'sac', 'mappo', 'marlisa', or 'rbc'",
+        "hint": "Try 'sac', 'marlisa', or 'rbc'",
     })
 
 
@@ -641,7 +607,7 @@ def get_baseline_comparison(model_id: str, baseline_type: str = "baseline") -> s
 
 SYSTEM_PROMPT = """You are an expert digital assistant for a CityLearn Reinforcement Learning platform.
 
-This platform trains multi-agent RL algorithms (SAC, MAPPO, MARLISA) to manage battery
+This platform trains multi-agent RL algorithms (SAC, MARLISA) to manage battery
 storage across a district of smart buildings, optimizing for electricity cost, carbon
 emissions, and peak demand reduction.
 
@@ -655,11 +621,24 @@ You have access to tools that let you:
 Guidelines:
 - Be precise and data-driven. When the user asks about performance, use tools to fetch actual numbers.
 - Interpret KPI values: < 1.0 means the RL agent outperforms the baseline for that metric.
-- Use markdown formatting for readability: tables, lists, bold for emphasis.
 - When comparing models, highlight which algorithm performs best and why.
 - If the user asks a general question you can answer from your knowledge, do so directly.
 - If data is needed, call the appropriate tool first, then summarize findings clearly.
-- Be conversational but concise. Avoid unnecessary verbosity.
+
+Response style — THIS IS CRITICAL:
+- NEVER dump raw JSON, dictionaries, or data tables. Always translate tool results into clear, human-readable prose.
+- Structure every response for easy scanning:
+  - Start with a **one-sentence summary** or key takeaway in bold.
+  - Follow with organized sections using **headings** (## or ###) to break up topics.
+  - Use **bullet points** for lists of findings, strengths, or comparisons.
+  - Use **bold** to highlight key numbers, metric names, and important conclusions.
+  - Use **nested bullet points** when breaking down sub-categories (e.g., per-building results under a model).
+- For KPIs, always explain in plain language what the number means (e.g., "The agent achieved a cost KPI of **0.82**, meaning it **reduced electricity costs by 18%** compared to the baseline").
+- For model comparisons, structure as a narrative: introduce the models, compare them dimension by dimension, then give a clear verdict on which performs best overall.
+- Weave numbers into natural sentences — never list raw key-value pairs (e.g., say "The district spans **9 buildings** with a combined solar capacity of **40 kW**" instead of `building_count: 9`).
+- Keep paragraphs short (2-3 sentences max). Use whitespace and structure to aid readability.
+- End with a brief **takeaway or recommendation** when appropriate.
+- Think of yourself as a senior analyst presenting a polished briefing — clarity, insight, and structure matter above all.
 """
 
 ALL_TOOLS = [
@@ -684,105 +663,63 @@ def create_agent() -> Agent:
         tools=ALL_TOOLS,
         instructions=[SYSTEM_PROMPT],
         markdown=True,
-        show_tool_calls=False,
+        show_tool_calls=True,
     )
 
 
-def _extract_tool_calls(response) -> list[dict]:
-    """Extract tool call info from an Agno RunResponse."""
-    if not response.messages:
-        return []
+def _safe_get_name(obj):
+    """Safely extract a string name from an Agno object, dict, or function."""
+    if obj is None:
+        return None
+    if isinstance(obj, str):
+        return obj
+    if isinstance(obj, dict):
+        return obj.get("name")
+    # Try common attribute names, catching any descriptor errors
+    for attr in ("name", "tool_name", "__name__"):
+        try:
+            val = getattr(obj, attr, None)
+            if isinstance(val, str):
+                return val
+        except Exception:
+            continue
+    return None
 
-    # Collect assistant tool_calls (name + args) and tool results separately
-    calls = []   # {"name", "args"}
-    results = []  # {"tool_call_id"|index, "result"}
+
+def _extract_tool_names(response) -> list[dict]:
+    """Extract tool function names from an Agno RunResponse using every available signal."""
+    names = []
+    seen = set()
+
+    if not response.messages:
+        return names
 
     for msg in response.messages:
         role = getattr(msg, "role", None)
 
-        # Assistant messages may contain tool_calls
-        if role == "assistant" or role == "model":
-            tc_list = getattr(msg, "tool_calls", None)
-            if tc_list:
-                for tc in tc_list:
-                    fn = getattr(tc, "function", tc)
-                    name = getattr(fn, "name", None) or str(fn)
-                    raw_args = getattr(fn, "arguments", None) or {}
-                    if isinstance(raw_args, str):
-                        try:
-                            raw_args = json.loads(raw_args)
-                        except (json.JSONDecodeError, TypeError):
-                            raw_args = {"raw": raw_args}
-                    calls.append({"name": name, "args": raw_args})
-
-        # Tool messages carry results
+        # 1) Tool-role messages often carry the function name
         if role == "tool":
-            content = getattr(msg, "content", "") or ""
-            if not isinstance(content, str):
-                content = json.dumps(content)
-            results.append(content)
+            name = _safe_get_name(msg)
+            if name and name not in seen:
+                seen.add(name)
+                names.append({"name": name})
+            continue
 
-    # Pair calls with results
-    final = []
-    for i, call in enumerate(calls):
-        result_str = results[i] if i < len(results) else ""
-        if len(result_str) > 2000:
-            result_str = result_str[:2000] + "\n... (truncated)"
-        final.append({
-            "name": call["name"],
-            "args": call["args"],
-            "result": result_str,
-        })
+        # 2) Assistant messages with tool_calls list
+        tc_list = getattr(msg, "tool_calls", None)
+        if tc_list:
+            for tc in tc_list:
+                if isinstance(tc, dict):
+                    fn = tc.get("function", tc)
+                    name = _safe_get_name(fn)
+                else:
+                    fn = getattr(tc, "function", None) or tc
+                    name = _safe_get_name(fn)
+                if name and name not in seen:
+                    seen.add(name)
+                    names.append({"name": name})
 
-    # If there are results without matching calls (some providers skip the assistant tool_call message)
-    if not calls and results:
-        for r in results:
-            if len(r) > 2000:
-                r = r[:2000] + "\n... (truncated)"
-            final.append({"name": "tool", "args": {}, "result": r})
-
-    return final
-
-
-def _clean_content(content: str) -> str:
-    """Strip raw tool-call JSON blobs that Gemini sometimes injects into the response text."""
-    if not content:
-        return ""
-
-    result = content
-    # Repeatedly find and remove top-level JSON objects that look like tool calls
-    while True:
-        # Find the start of a potential tool-call blob
-        idx = result.find('"type": "function"')
-        if idx == -1:
-            idx = result.find("'type': 'function'")
-        if idx == -1:
-            break
-
-        # Walk backwards to find the opening brace
-        start = idx
-        while start > 0 and result[start] != '{':
-            start -= 1
-        if result[start] != '{':
-            break
-
-        # Walk forward to find the matching closing brace
-        depth = 0
-        end = start
-        while end < len(result):
-            if result[end] == '{':
-                depth += 1
-            elif result[end] == '}':
-                depth -= 1
-                if depth == 0:
-                    end += 1
-                    break
-            end += 1
-
-        # Remove this blob
-        result = result[:start] + result[end:]
-
-    return result.strip()
+    return names
 
 
 def chat(messages: list[dict], session_id: str | None = None) -> dict:
@@ -793,16 +730,57 @@ def chat(messages: list[dict], session_id: str | None = None) -> dict:
         session_id: Optional session identifier for conversation continuity.
 
     Returns:
-        {"content": str, "tool_calls": [{"name": str, "args": dict, "result": str}, ...]}
+        {"content": str, "tool_calls": [{"name": str}, ...]}
     """
-    agent = create_agent()
+    import logging
+    logger = logging.getLogger(__name__)
+
     user_message = messages[-1]["content"] if messages else ""
-    response = agent.run(user_message)
+    logger.info("Chat request: %s", user_message[:200])
+
+    try:
+        agent = create_agent()
+    except Exception as e:
+        logger.exception("Failed to create agent")
+        raise RuntimeError(f"Agent creation failed: {type(e).__name__}: {e}") from e
+
+    try:
+        response = agent.run(user_message)
+    except Exception as e:
+        logger.exception("agent.run() failed")
+        raise RuntimeError(f"Agent run failed: {type(e).__name__}: {e}") from e
+
+    import re
 
     content = response.content or ""
-    content = _clean_content(content)
+
+    # Extract tool names from response messages
+    tool_calls = _extract_tool_names(response)
+
+    # Fallback: also extract tool names from content (show_tool_calls=True injects them)
+    seen = {tc["name"] for tc in tool_calls}
+    TOOL_NAMES = {
+        "list_trained_models", "get_model_details", "get_episode_kpis",
+        "get_episode_summary", "compare_models", "get_building_info",
+        "get_dataset_info", "explain_citylearn", "explain_algorithm",
+        "get_baseline_comparison",
+    }
+    for name in TOOL_NAMES:
+        if name in content and name not in seen:
+            tool_calls.append({"name": name})
+            seen.add(name)
+
+    # Strip tool-call noise from content so the frontend only shows clean prose
+    # Remove lines like "Running: func_name(...)" or "• Running: func_name(...)"
+    content = re.sub(r"^[•\-\s]*Running:?\s+\w+\(.*?\)\s*$", "", content, flags=re.MULTILINE)
+    # Remove raw JSON tool-call blobs  {...'type': 'function'...}
+    content = re.sub(r"\{[^}]*['\"]type['\"]\s*:\s*['\"]function['\"][^}]*\}", "", content)
+    # Clean up excessive blank lines left behind
+    content = re.sub(r"\n{3,}", "\n\n", content).strip()
+
+    logger.info("Extracted tool_calls: %s", tool_calls)
 
     return {
         "content": content,
-        "tool_calls": _extract_tool_calls(response),
+        "tool_calls": tool_calls,
     }

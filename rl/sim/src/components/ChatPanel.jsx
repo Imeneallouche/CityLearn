@@ -26,9 +26,11 @@ function ToolCallCard({ toolCall }) {
   const Icon = meta.icon;
 
   return (
-    <div className="chat-tool-card flex items-center gap-2 px-3 py-2">
-      <Icon size={14} className="text-indigo-500 shrink-0" />
-      <span className="text-xs font-medium text-slate-600">{meta.label}</span>
+    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-50 border border-indigo-100">
+      <div className="w-4 h-4 rounded-full bg-indigo-100 flex items-center justify-center">
+        <Icon size={10} className="text-indigo-600" />
+      </div>
+      <span className="text-[11px] font-medium text-indigo-700">{meta.label}</span>
     </div>
   );
 }
@@ -50,7 +52,7 @@ function MessageBubble({ message, fullscreen }) {
       } ${isUser ? 'items-end' : 'items-start'}`}>
         {/* Tool calls rendered before the response */}
         {!isUser && message.tool_calls?.length > 0 && (
-          <div className="w-full space-y-1.5 mb-1">
+          <div className="flex flex-wrap gap-1.5 mb-1.5">
             {message.tool_calls.map((tc, i) => (
               <ToolCallCard key={i} toolCall={tc} />
             ))}
@@ -73,18 +75,42 @@ function MessageBubble({ message, fullscreen }) {
   );
 }
 
+const THINKING_PHRASES = [
+  'Thinking...',
+  'Pondering...',
+  'Contemplating...',
+  'Philosophizing...',
+  'Ruminating...',
+  'Deliberating...',
+  'Musing...',
+  'Reflecting...',
+  'Cogitating...',
+  'Brainstorming...',
+];
+
 function ThinkingIndicator({ fullscreen }) {
+  const [phraseIdx, setPhraseIdx] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPhraseIdx(prev => (prev + 1) % THINKING_PHRASES.length);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="flex gap-3">
       <div className={`shrink-0 rounded-full flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 ${
         fullscreen ? 'w-8 h-8' : 'w-7 h-7'
       }`}>
-        <Sparkles size={fullscreen ? 16 : 14} className="text-white" />
+        <Sparkles size={fullscreen ? 16 : 14} className="text-white animate-pulse" />
       </div>
       <div className="bg-white border border-slate-200 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
-        <div className="flex items-center gap-2 text-slate-500 text-sm">
-          <Loader2 size={14} className="animate-spin" />
-          <span>Thinking...</span>
+        <div className="flex items-center gap-2.5 text-sm">
+          <Loader2 size={14} className="animate-spin text-indigo-500" />
+          <span className="text-slate-600 think-phrase" key={phraseIdx}>
+            {THINKING_PHRASES[phraseIdx]}
+          </span>
         </div>
       </div>
     </div>
@@ -97,7 +123,7 @@ const SUGGESTIONS = [
   'How does MARLISA work?',
   'Compare all models on 3 buildings',
   'Analyze KPIs for the best model',
-  'How does SAC differ from MAPPO?',
+  'How does SAC differ from MARLISA?',
 ];
 
 export default function ChatPanel({ mode, onClose, onToggleMode }) {
@@ -136,7 +162,9 @@ export default function ChatPanel({ mode, onClose, onToggleMode }) {
       setMessages([...newMessages, {
         role: 'assistant',
         content: result.content,
-        tool_calls: result.tool_calls || [],
+        tool_calls: (result.tool_calls || []).map(tc => ({
+          name: tc.name,
+        })),
       }]);
     } catch (err) {
       setMessages([...newMessages, {
@@ -313,7 +341,7 @@ export default function ChatPanel({ mode, onClose, onToggleMode }) {
                 {[
                   { icon: Bot, label: 'Model Explorer', desc: 'List & inspect trained models' },
                   { icon: BarChart3, label: 'KPI Analysis', desc: 'Analyze performance metrics' },
-                  { icon: FlaskConical, label: 'Algorithm Expert', desc: 'Explain SAC, MAPPO, MARLISA' },
+                  { icon: FlaskConical, label: 'Algorithm Expert', desc: 'Explain SAC, MARLISA, RBC' },
                   { icon: Database, label: 'Dataset Inspector', desc: 'Browse building & dataset info' },
                   { icon: Zap, label: 'Model Comparison', desc: 'Compare agents & baselines' },
                   { icon: BookOpen, label: 'Environment Guide', desc: 'Explain CityLearn concepts' },
@@ -359,19 +387,16 @@ export default function ChatPanel({ mode, onClose, onToggleMode }) {
             {messages.some(m => m.tool_calls?.length > 0) ? (
               <div className="space-y-2">
                 {messages.filter(m => m.tool_calls?.length > 0).flatMap((m, mi) =>
-                  m.tool_calls.map((tc, ti) => (
-                    <div key={`${mi}-${ti}`} className="p-2.5 rounded-lg bg-slate-50 border border-slate-100">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Wrench size={12} className="text-indigo-500" />
-                        <span className="text-xs font-medium text-slate-700">{TOOL_LABELS[tc.name] || tc.name}</span>
+                  m.tool_calls.map((tc, ti) => {
+                    const meta = TOOL_META[tc.name] || { label: tc.name, icon: Wrench };
+                    const Icon = meta.icon;
+                    return (
+                      <div key={`${mi}-${ti}`} className="flex items-center gap-2 p-2.5 rounded-lg bg-slate-50 border border-slate-100">
+                        <Icon size={12} className="text-indigo-500 shrink-0" />
+                        <span className="text-xs font-medium text-slate-700">{meta.label}</span>
                       </div>
-                      {tc.args && Object.keys(tc.args).length > 0 && (
-                        <div className="text-[10px] text-slate-400 font-mono truncate">
-                          {Object.entries(tc.args).map(([k, v]) => `${k}: ${v}`).join(', ')}
-                        </div>
-                      )}
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             ) : (

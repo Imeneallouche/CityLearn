@@ -25,6 +25,29 @@ function renderInline(text) {
   return result;
 }
 
+/**
+ * Build a nested tree from flat list items with indent levels.
+ * Each node: { content: string, children: node[] }
+ */
+function buildNestedList(rawItems) {
+  const root = [];
+  const stack = [{ children: root, indent: -1 }];
+
+  for (const { indent, text } of rawItems) {
+    const node = { content: renderInline(text), children: [] };
+
+    // Pop stack until we find a parent with smaller indent
+    while (stack.length > 1 && stack[stack.length - 1].indent >= indent) {
+      stack.pop();
+    }
+
+    stack[stack.length - 1].children.push(node);
+    stack.push({ children: node.children, indent });
+  }
+
+  return root;
+}
+
 function parseMarkdown(md) {
   const lines = md.split('\n');
   const blocks = [];
@@ -91,23 +114,27 @@ function parseMarkdown(md) {
 
     // Unordered list
     if (/^\s*[-*+]\s/.test(line)) {
-      const items = [];
+      const rawItems = [];
       while (i < lines.length && /^\s*[-*+]\s/.test(lines[i])) {
-        items.push(renderInline(lines[i].replace(/^\s*[-*+]\s/, '')));
+        const indent = lines[i].match(/^(\s*)/)[1].length;
+        const text = lines[i].replace(/^\s*[-*+]\s/, '');
+        rawItems.push({ indent, text });
         i++;
       }
-      blocks.push({ type: 'ul', items });
+      blocks.push({ type: 'ul', items: buildNestedList(rawItems) });
       continue;
     }
 
     // Ordered list
     if (/^\s*\d+\.\s/.test(line)) {
-      const items = [];
+      const rawItems = [];
       while (i < lines.length && /^\s*\d+\.\s/.test(lines[i])) {
-        items.push(renderInline(lines[i].replace(/^\s*\d+\.\s/, '')));
+        const indent = lines[i].match(/^(\s*)/)[1].length;
+        const text = lines[i].replace(/^\s*\d+\.\s/, '');
+        rawItems.push({ indent, text });
         i++;
       }
-      blocks.push({ type: 'ol', items });
+      blocks.push({ type: 'ol', items: buildNestedList(rawItems) });
       continue;
     }
 
@@ -129,6 +156,22 @@ function parseMarkdown(md) {
   }
 
   return blocks;
+}
+
+function NestedList({ items, ordered, isRoot }) {
+  const Tag = ordered ? 'ol' : 'ul';
+  return (
+    <Tag className={`${isRoot ? 'mb-2' : 'mt-0.5'} space-y-0.5 ${ordered ? 'list-decimal' : 'list-disc'} list-outside pl-5 text-slate-700`}>
+      {items.map((item, i) => (
+        <li key={i} className="text-sm">
+          <span dangerouslySetInnerHTML={{ __html: item.content }} />
+          {item.children?.length > 0 && (
+            <NestedList items={item.children} ordered={ordered} />
+          )}
+        </li>
+      ))}
+    </Tag>
+  );
 }
 
 function BlockRenderer({ block }) {
@@ -154,22 +197,10 @@ function BlockRenderer({ block }) {
       );
 
     case 'ul':
-      return (
-        <ul className="mb-2 space-y-0.5 list-disc list-inside text-slate-700">
-          {block.items.map((item, i) => (
-            <li key={i} className="text-sm" dangerouslySetInnerHTML={{ __html: item }} />
-          ))}
-        </ul>
-      );
+      return <NestedList items={block.items} ordered={false} isRoot />;
 
     case 'ol':
-      return (
-        <ol className="mb-2 space-y-0.5 list-decimal list-inside text-slate-700">
-          {block.items.map((item, i) => (
-            <li key={i} className="text-sm" dangerouslySetInnerHTML={{ __html: item }} />
-          ))}
-        </ol>
-      );
+      return <NestedList items={block.items} ordered isRoot />;
 
     case 'table':
       return (

@@ -125,3 +125,12 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 .chat-markdown strong { @apply font-semibold; }
 .chat-markdown em { @apply italic; }
+
+/* Thinking phrase fade-in */
+@keyframes thinkFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.think-phrase {
+  animation: thinkFadeIn 0.35s ease-out;
+}
