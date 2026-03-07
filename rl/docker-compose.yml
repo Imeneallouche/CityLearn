@@ -9,9 +9,8 @@ services:
       # Mount data and outputs read-only so the container sees them
       - ./datasets:/app/datasets:ro
       - ./outputs:/app/outputs:ro
-      # Mount code for live reload during development
+      # Mount API code for live reload during development
       - ./api:/app/api:ro
-      - ./sim:/app/sim:ro
     environment:
       - PYTHONUNBUFFERED=1
     restart: unless-stopped

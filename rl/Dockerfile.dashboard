@@ -1,3 +1,12 @@
+# ── Stage 1: Build React UI ──────────────────────
+FROM node:20-alpine AS ui-build
+WORKDIR /app/sim
+COPY sim/package.json sim/package-lock.json* ./
+RUN npm install --legacy-peer-deps
+COPY sim/ ./
+RUN npm run build
+
+# ── Stage 2: Python API + built React ───────────
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -21,9 +30,11 @@ RUN pip install --no-cache-dir \
     fastapi \
     "uvicorn[standard]"
 
-# Copy application code
+# Copy API code
 COPY api/ /app/api/
-COPY sim/ /app/sim/
+
+# Copy built React assets from stage 1
+COPY --from=ui-build /app/sim/dist /app/sim-dist
 
 EXPOSE 8000
 

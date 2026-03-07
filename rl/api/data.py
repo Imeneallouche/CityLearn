@@ -56,7 +56,9 @@ def load_episode_data(model_info: dict, episode: str) -> dict | None:
         "net_consumption": [r.get("Net Electricity Consumption-kWh", 0) for r in community_rows],
         "self_consumption": [r.get("Self Consumption-kWh", 0) for r in community_rows],
         "stored_energy": [r.get("Stored energy by community- kWh", 0) for r in community_rows],
-        "solar_generation": [r.get("Total Solar Generation-kWh", 0) for r in community_rows],
+        # CityLearn convention: community solar is negative (generation = negative).
+        # We negate it here so the frontend always sees positive generation values.
+        "solar_generation": [abs(r.get("Total Solar Generation-kWh", 0)) for r in community_rows],
         "co2": [r.get("CO2-kg_co2", 0) for r in community_rows],
         "price_cost": [r.get("Price-$", 0) for r in community_rows],
     }
@@ -105,7 +107,8 @@ def load_episode_data(model_info: dict, episode: str) -> dict | None:
         buildings_data[bname] = {
             "net_consumption": [r.get("Net Electricity Consumption-kWh", 0) for r in brows],
             "non_shiftable_load": [r.get("Non-shiftable Load-kWh", 0) for r in brows],
-            "pv_generation": [r.get("Energy Production from PV-kWh", 0) for r in brows],
+            # Per-building PV: exported as positive, but abs() for safety
+            "pv_generation": [abs(r.get("Energy Production from PV-kWh", 0)) for r in brows],
             "battery_soc": [r.get("Battery Soc-%", 0) for r in bat_rows],
             "battery_charge": [r.get("Battery (Dis)Charge-kWh", 0) for r in bat_rows],
             "indoor_temperature": [r.get("indoor_dry_bulb_temperature", 0) for r in raw_slice],
