@@ -10,6 +10,8 @@
 
 > As a result, Our solution provided an optimized 5G architecture for smart city use cases involving up to 20 smart city buildings as a proof of concept, ensuring that the resulting KPIs satisfy key 5G performance constraints.
 
+<img width="1920" height="1050" alt="image" src="https://github.com/user-attachments/assets/98dd39ab-bd22-4741-9f54-1cecafc5cf92" />
+
 ---
 
 ## Table of Contents
