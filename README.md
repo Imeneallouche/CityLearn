@@ -2,6 +2,8 @@
 
 ## Smart Cities & Renewable Energy — 5G & Digital Power
 
+CityLearn is dockerized smart city platform uniting Multi-Agent Reinforcement Learning (PyTorch, CityLearn, SAC, MARLISA) for microgrid energy optimization with a real-time 3D 5G Standalone digital twin control plane (free5GC), equipped with custom reward structures to optimize battery storage, carbon emissions, and peak grid demand, while enabling intent-based network orchestration that auto-scales containerized 5G core functions and evaluates 3GPP KPIs in real time.
+
 ---
 
 ## Table of Contents
